@@ -1,5 +1,5 @@
 
-#Cambio de vecto a set por las comparaciones, el tipo vector en bro no las soporta
+#Cambio de vector a set por las comparaciones, el tipo vector en bro no las soporta
 global conex: set[connection];
 global tam=0;
 # Cada vez que entra un nuevo paquete lo comparo con lo que ya tengo en el set

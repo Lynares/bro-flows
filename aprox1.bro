@@ -120,3 +120,8 @@ event connection_state_remove(c: connection){
     informacion_paquete(c);
     ## print fmt("Numero de paquetes en set: %d", |conex|);
 }
+
+## Evento que se lanza cuando BRO termina
+event bro_done(){
+  print fmt("Numero de paquetes en set: %d", |conex|);
+}

@@ -4,7 +4,8 @@
 ## @load base/protocols/http
 ##global conexiones: vector of connection;
 
-## PRIMERA APROXIMACION con un solo set, simplemente almaceno los paquetes en un set y cuando mueren los elimino
+## PRIMERA APROXIMACION con un solo set, simplemente almaceno los paquetes en un set (PARA FLUJOS ACTIVOS) y cuando mueren los elimino
+## El contenido del set si se ve alterado, pero el tamaño no, pues no es memoria dinamica
 ## Cambio de vector a set por las comparaciones, el tipo vector en bro no las soporta
 global conex: set[connection];
 ## Variable global para conocer el tamaño del set
@@ -16,7 +17,7 @@ global elimi=0;
 
 ## SEGUNDA APROXIMACION... FICHERO aprox2.bro CREO SET COMPLEMENTARIO PARA ALMACENAR LOS QUE YA TENGO ALMACENADOS EN ALGUN MOMENTO
 
-## set para almacenar los paquetes que coinciden con los que ya tenemos en conex...
+## set para almacenar los paquetes que coinciden con los que ya tenemos en conex... (PARA FLUJOS EMPAREJADOS)
 ## Incluidos TCP, UDP e ICMP
 global matchs: set[connection]; ## Tal vez una table con indice connection para saber con cual esta emparejado (?)
 ## variable global para controlar su crecimiento
@@ -24,6 +25,8 @@ global tamm=0;
 ## variable global para ver la cantidad de matchs distintos que hacemos
 global nmatchs=0;
 
+## TODO: umbral mediante el cual comparar los flujos
+##        comprobar como se organiza internamente un set, si cuando se borra algo el indice baja o no...
 
 ## Creo funcion auxiliar para ver la informacion del paquete nuevo que se añade, no de todos los paquetes todo el rato
 function informacion_paquete(c: connection){
@@ -48,7 +51,7 @@ event new_connection(c: connection){
    add conex[c];
   }
 ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes
-  local cd: connection;
+  local cl: connection;
 ## Variable booleana para controlar el acceso al set
   local met = F;
 ## Si el set está vacio le permitimos escritura
@@ -57,15 +60,14 @@ event new_connection(c: connection){
     tams=tams+1;
   }
 
-
 ## for que va recorriendo el set y haciendo comparaciones
   for(s in conex){
     ## Copiamos en la variable local para comparar con todo lo que hay en el set
-    cd=s;
-    if(cd$id$orig_h != c$id$orig_h){
-      if(cd$id$resp_h != c$id$resp_h){
-        if(cd$id$orig_p != c$id$orig_p){
-          if(cd$id$resp_p != c$id$resp_p){
+    cl=s;
+    if(cl$id$orig_h != c$id$orig_h){
+      if(cl$id$resp_h != c$id$resp_h){
+        if(cl$id$orig_p != c$id$orig_p){
+          if(cl$id$resp_p != c$id$resp_p){
             ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
             met=T;
           }
@@ -97,18 +99,18 @@ event connection_state_remove(c: connection){
 
 
   ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes
-    local cd: connection;
+    local cl: connection;
   ## Variable booleana para controlar el acceso al set
     local met = F;
 
   ## for que va recorriendo el set y haciendo comparaciones
     for(s in conex){
       ## Copiamos en la variable local para comparar con todo lo que hay en el set
-      cd=s;
-      if(cd$id$orig_h == c$id$orig_h){
-        if(cd$id$resp_h == c$id$resp_h){
-          if(cd$id$orig_p == c$id$orig_p){
-            if(cd$id$resp_p == c$id$resp_p){
+      cl=s;
+      if(cl$id$orig_h == c$id$orig_h){
+        if(cl$id$resp_h == c$id$resp_h){
+          if(cl$id$orig_p == c$id$orig_p){
+            if(cl$id$resp_p == c$id$resp_p){
               ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
               met=T;
             }
@@ -129,7 +131,7 @@ event connection_state_remove(c: connection){
         tams=tams-1;
       }
     ## Mostramos por pantalla un mensaje de eliminacion de un paquete si procede
-      print fmt("Elimino un paquete por la conexion de origen distinta");
+      print fmt("Elimino un paquete TCP por la conexion de origen distinta");
     }
     met=F;
     print fmt("Numero de paquetes al momento: %d", tam);
@@ -156,7 +158,6 @@ event connection_established(c: connection){
     for(s in conex){
       ## Copiamos en la variable local para comparar con todo lo que hay en el set
       cl=s;
-
       if(cl$id$orig_h == c$id$orig_h){
         if(cl$id$resp_h == c$id$resp_h){
           if(cl$id$orig_p == c$id$orig_p){
@@ -177,6 +178,7 @@ event connection_established(c: connection){
       add matchs[c];
       tamm=tamm+1;
       print fmt("Encontrado un paquete TCP que coincide con otro de las conexiones que ya tenemos");
+      nmatchs=nmatchs+1;
     }
     met=F;
     print fmt("Tamanio del set matchs: %d", tamm);
@@ -226,12 +228,17 @@ event udp_request(u: connection){
         add matchs[u];
         tamm=tamm+1;
         print fmt("Encontrado un paquete UDP que coincide con otro de las conexiones que ya tenemos");
+        nmatchs=nmatchs+1;
       }
       met=F;
       print fmt("Tamanio del set matchs: %d", tamm);
       informacion_paquete(u);
 
 }
+## udp_session_done se lanza cuando la conexion UDP finaliza, por lo tanto tendremos que borrar del set conex los paquetes que se correspondan
+## event udp_session_done(u: connection)
+## Segun la documentacion esto es soportado por los siguientes protocolos DNS, NTP, Netbios, Syslog, AYIYA, Teredo y GTPv1.
+
 
 ## Para mensajes ICMP, tendremos que usar otro tipo de evento especifico para este tipo
 ## ICMP manda mensajes de echo, el primero de tipo request, mensaje de control para recibir un mensaje reply
@@ -284,6 +291,7 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
       add matchs[c];
       tamm=tamm+1;
       print fmt("Encontrado un paquete ICMP request que coincide con otro de las conexiones que ya tenemos");
+      nmatchs=nmatchs+1;
     }
     met=F;
     print fmt("Tamanio del set matchs: %d", tamm);
@@ -328,9 +336,15 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
       add matchs[c];
       tamm=tamm+1;
       print fmt("Encontrado un paquete ICMP reply que coincide con otro de las conexiones que ya tenemos");
+
     }
     met=F;
     print fmt("Tamanio del set matchs: %d", tamm);
     informacion_paquete(c);
-
+    nmatchs=nmatchs+1;
+}
+## Evento que se genera cuando BRO va a tenerminar, menos si se realiza mediante una llamada a la funcion exit (ver documentacion)
+event bro_done(){
+  print fmt("El numero total de coincidencias es: %d", nmatchs);
+  print fmt("El tamaño maximo del set de coincidencias es: %d", |matchs|);
 }
