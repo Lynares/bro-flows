@@ -84,12 +84,12 @@ event new_connection(c: connection){
   if (met==T){
     add conex[c];
     tams=tams+1;
-    print fmt("Meto un paquete nuevo por la conexion de origen distinta");
+##    print fmt("Meto un paquete nuevo por la conexion de origen distinta");
   }
   met=F;
-  print fmt("Numero de paquetes al momento: %d", tam);
-  print fmt("Tamanio del set: %d", tams);
-  informacion_paquete(c);
+  ## print fmt("Numero de paquetes al momento: %d", tam);
+  ## print fmt("Tamanio del set: %d", tams);
+  ## informacion_paquete(c);
 }
 
 ## cuando la conexion es borrada
@@ -135,12 +135,12 @@ event connection_state_remove(c: connection){
         tams=tams-1;
       }
     ## Mostramos por pantalla un mensaje de eliminacion de un paquete si procede
-      print fmt("Elimino un paquete TCP por la conexion de origen distinta");
+  ##    print fmt("Elimino un paquete TCP por la conexion de origen distinta");
     }
+    ##  print fmt("Numero de paquetes al momento: %d", tam);
     met=F;
-    print fmt("Numero de paquetes al momento: %d", tam);
-    print fmt("Tamanio del set: %d", tams);
-    informacion_paquete(c);
+  ##  print fmt("Tamanio del set: %d", tams);
+  ##  informacion_paquete(c);
     ## print fmt("Numero de paquetes en set: %d", |conex|);
 }
 
@@ -170,11 +170,11 @@ event connection_established(c: connection){
               ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
               met=T;
               ## Cambiar para que no se vea toda la informacion del paquete, solo las IP's y los puertos
-              informacion_coincidencia(c, cl);
+    ##          informacion_coincidencia(c, cl);
               ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
               empa[cl]=c;
-              print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-              print fmt("Metido en tabla");
+  ##            print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+  ##            print fmt("Metido en tabla");
             }
           }
         }
@@ -186,14 +186,14 @@ event connection_established(c: connection){
       add matchs[c];
 
       tamm=tamm+1;
-      print fmt("Encontrado un paquete TCP que coincide con otro de las conexiones que ya tenemos");
+  ##    print fmt("Encontrado un paquete TCP que coincide con otro de las conexiones que ya tenemos");
       nmatchs=nmatchs+1;
       ## Arroja datos erroneos pues el valor local es el de la ultima iteraccion del for y tendría que coincidir
       ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
     }
     met=F;
-    print fmt("Tamanio del set matchs: %d", tamm);
-    informacion_paquete(c);
+  ##  print fmt("Tamanio del set matchs: %d", tamm);
+  ##  informacion_paquete(c);
 
 }
 
@@ -226,11 +226,11 @@ event udp_request(u: connection){
                 ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
                 met=T;
                 ## Cambiar para que no se vea toda la informacion del paquete, solo las IP's y los puertos
-                informacion_coincidencia(u, ul);
+  ##              informacion_coincidencia(u, ul);
                 ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
                 empa[ul]=u;
-                print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
-                print fmt("Metido en tabla");
+  ##              print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
+  ##              print fmt("Metido en tabla");
               }
             }
           }
@@ -241,12 +241,12 @@ event udp_request(u: connection){
       if (met==T){
         add matchs[u];
         tamm=tamm+1;
-        print fmt("Encontrado un paquete UDP request que coincide con otro de las conexiones que ya tenemos");
+  ##      print fmt("Encontrado un paquete UDP request que coincide con otro de las conexiones que ya tenemos");
         nmatchs=nmatchs+1;
       }
       met=F;
-      print fmt("Tamanio del set matchs: %d", tamm);
-      informacion_paquete(u);
+  ##    print fmt("Tamanio del set matchs: %d", tamm);
+  ##    informacion_paquete(u);
 
 }
 
@@ -273,11 +273,11 @@ event udp_reply(u: connection){
               ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
               met=T;
               ## Cambiar para que no se vea toda la informacion del paquete, solo las IP's y los puertos
-              informacion_coincidencia(u, ul);
+  ##            informacion_coincidencia(u, ul);
               ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
               empa[ul]=u;
-              print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
-              print fmt("Metido en tabla");
+  ##            print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
+  ##            print fmt("Metido en tabla");
             }
           }
         }
@@ -288,12 +288,12 @@ event udp_reply(u: connection){
     if (met==T){
       add matchs[u];
       tamm=tamm+1;
-      print fmt("Encontrado un paquete UDP reply que coincide con otro de las conexiones que ya tenemos");
+##      print fmt("Encontrado un paquete UDP reply que coincide con otro de las conexiones que ya tenemos");
       nmatchs=nmatchs+1;
     }
     met=F;
-    print fmt("Tamanio del set matchs: %d", tamm);
-    informacion_paquete(u);
+    ## print fmt("Tamanio del set matchs: %d", tamm);
+    ## informacion_paquete(u);
 
 }
 
@@ -341,11 +341,11 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
               ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
               met=T;
               ## Cambiar para que no se vea toda la informacion del paquete, solo las IP's y los puertos
-              informacion_coincidencia(c, cl);
+        ##      informacion_coincidencia(c, cl);
               ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
               empa[cl]=c;
-              print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-              print fmt("Metido en tabla");
+        ##      print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+        ##      print fmt("Metido en tabla");
             }
           }
         }
@@ -356,12 +356,12 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
     if (met==T){
       add matchs[c];
       tamm=tamm+1;
-      print fmt("Encontrado un paquete ICMP request que coincide con otro de las conexiones que ya tenemos");
+      ## print fmt("Encontrado un paquete ICMP request que coincide con otro de las conexiones que ya tenemos");
       nmatchs=nmatchs+1;
     }
     met=F;
-    print fmt("Tamanio del set matchs: %d", tamm);
-    informacion_paquete(c);
+    ## print fmt("Tamanio del set matchs: %d", tamm);
+    ## informacion_paquete(c);
 
 }
 
@@ -389,11 +389,11 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
               ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
               met=T;
               ## Cambiar para que no se vea toda la informacion del paquete, solo las IP's y los puertos
-              informacion_coincidencia(c, cl);
+      ##        informacion_coincidencia(c, cl);
               ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
               empa[cl]=c;
-              print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-              print fmt("Metido en tabla");
+      ##        print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+      ##        print fmt("Metido en tabla");
             }
           }
         }
@@ -404,16 +404,21 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
     if (met==T){
       add matchs[c];
       tamm=tamm+1;
-      print fmt("Encontrado un paquete ICMP reply que coincide con otro de las conexiones que ya tenemos");
+  ##    print fmt("Encontrado un paquete ICMP reply que coincide con otro de las conexiones que ya tenemos");
 
     }
     met=F;
-    print fmt("Tamanio del set matchs: %d", tamm);
-    informacion_paquete(c);
+    ## print fmt("Tamanio del set matchs: %d", tamm);
+    ## informacion_paquete(c);
     nmatchs=nmatchs+1;
 }
 ## Evento que se genera cuando BRO va a tenerminar, menos si se realiza mediante una llamada a la funcion exit (ver documentacion)
 event bro_done(){
   print fmt("El numero total de coincidencias es: %d", nmatchs);
   print fmt("El tamaño maximo del set de coincidencias es: %d", |matchs|);
+  for(s in empa){
+    ## print fmt("Tamaño de la fila de la tabla: %d", |empa[s]|);
+    print fmt("Tenemos: %s en %s a %s en %s", empa[s]$id$orig_h, empa[s]$id$orig_p, empa[s]$id$resp_h, empa[s]$id$resp_p);
+    print fmt(" de %s en %s a %s en %s", s$id$orig_h, s$id$orig_p, s$id$resp_h, s$id$resp_p);
+  }
 }
