@@ -155,6 +155,7 @@ event connection_established(c: connection){
     }
   ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes que no coinciden
     local cl: connection;
+    local rest: connection;
   ## Variable booleana para controlar el acceso al set
     local met = F;
 
@@ -170,7 +171,10 @@ event connection_established(c: connection){
               met=T;
               ## Cambiar para que no se vea toda la informacion del paquete, solo las IP's y los puertos
               informacion_coincidencia(c, cl);
-
+              ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+              empa[cl]=c;
+              print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              print fmt("Metido en tabla");
             }
           }
         }
@@ -180,9 +184,12 @@ event connection_established(c: connection){
     ## Con la variable booleana controlamos el crecimiento del set
     if (met==T){
       add matchs[c];
+
       tamm=tamm+1;
       print fmt("Encontrado un paquete TCP que coincide con otro de las conexiones que ya tenemos");
       nmatchs=nmatchs+1;
+      ## Arroja datos erroneos pues el valor local es el de la ultima iteraccion del for y tendría que coincidir
+      ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
     }
     met=F;
     print fmt("Tamanio del set matchs: %d", tamm);
@@ -220,7 +227,10 @@ event udp_request(u: connection){
                 met=T;
                 ## Cambiar para que no se vea toda la informacion del paquete, solo las IP's y los puertos
                 informacion_coincidencia(u, ul);
-
+                ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+                empa[ul]=u;
+                print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
+                print fmt("Metido en tabla");
               }
             }
           }
@@ -264,7 +274,10 @@ event udp_reply(u: connection){
               met=T;
               ## Cambiar para que no se vea toda la informacion del paquete, solo las IP's y los puertos
               informacion_coincidencia(u, ul);
-
+              ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+              empa[ul]=u;
+              print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
+              print fmt("Metido en tabla");
             }
           }
         }
@@ -329,7 +342,10 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
               met=T;
               ## Cambiar para que no se vea toda la informacion del paquete, solo las IP's y los puertos
               informacion_coincidencia(c, cl);
-
+              ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+              empa[cl]=c;
+              print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              print fmt("Metido en tabla");
             }
           }
         }
@@ -374,7 +390,10 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
               met=T;
               ## Cambiar para que no se vea toda la informacion del paquete, solo las IP's y los puertos
               informacion_coincidencia(c, cl);
-
+              ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+              empa[cl]=c;
+              print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              print fmt("Metido en tabla");
             }
           }
         }
