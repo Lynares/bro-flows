@@ -19,8 +19,8 @@ Obviamente se podrá usar otro archivo pcap o cualquier otro script de BRO.
 
 La función que se usará para el emparejamiento de flujos será la dada en el articulo "A generalizable dynamic flow pairing method for traffic classification"
 
-'''''''''''''''''
+`````````````````
 
 resultado=(Nip-1)+(1/((Po1-Po2)+k1))+(1/((Pd1-Pd2)+k1))+(1/(dt+k2));
 
-'''''''''''''''''
+`````````````````
