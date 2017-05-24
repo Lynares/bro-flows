@@ -35,7 +35,7 @@ global empa: table[connection] of connection;
 global umbral: double;
 
 ## Definimos el umbral, de manera global para hacer las comparaciones
-global k=10;
+global k=5;
 
 ## funcion para la comparacion de los flujos, c1 el flujo que esta en el set conex y c2 para el flujo que es candidato a guardarse en matchs
 function emparejamiento(c1: connection, c2: connection ):double {
@@ -62,6 +62,19 @@ function emparejamiento(c1: connection, c2: connection ):double {
       }
     }
   }
+## Este bucle lo puedo hacer sin ningun problema, pues en los eventos todavia no se ha dicho que se guarde en el set
+  for (i in matchs){
+    if(i$id$orig_h == c1$id$orig_h){
+      if(i$id$resp_h == c1$id$resp_h){
+        if(i$id$orig_p == c1$id$orig_p){
+          if(i$id$resp_p == c1$id$resp_p){
+            Nip=Nip+1;
+          }
+        }
+      }
+    }
+  }
+
   ## Para dp1 y dp2 que son 1-norm usamos la "Manhattan norm" que dice lo siguiente: SAD(x1,x2) = sumatoria(x1i - x2i)
   ## k1 y k2 son dos variables que nosotros le ponemos de forma manual, en este caso las pondremos como locales con 1 y 10 respectivamente
   ## dt es la diferencia de tiempo entre los time stamp de los primeros paquetes de los flujos
@@ -225,7 +238,7 @@ event connection_established(c: connection){
               ## Cambiar para que no se vea toda la informacion del paquete, solo las IP's y los puertos
     ##          informacion_coincidencia(c, cl);
                 umbral=emparejamiento(cl, c);
-                if(umbral<k){
+                if(umbral>k){
                 ## Mostrar en el mensaje TCP es para control
                   print fmt("Si son emparejables TCP");
                 }else{
@@ -290,7 +303,7 @@ event udp_request(u: connection){
                 ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
                 empa[ul]=u;
                 umbral=emparejamiento(ul, u);
-                if(umbral<k){
+                if(umbral>k){
                 ## Mostrar en el mensaje UDP es para control
                   print fmt("Si son emparejables UDP request");
                 }else{
@@ -344,7 +357,7 @@ event udp_reply(u: connection){
               ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
               empa[ul]=u;
               umbral=emparejamiento(ul, u);
-              if(umbral<k){
+              if(umbral>k){
               ## Mostrar en el mensaje UDP es para control
                 print fmt("Si son emparejables UDP reply");
               }else{
@@ -419,7 +432,7 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
               ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
               empa[cl]=c;
               umbral=emparejamiento(cl, c);
-              if(umbral<k){
+              if(umbral>k){
               ## Mostrar en el mensaje ICMP es para control
                 print fmt("Si son emparejables ICMP request");
               }else{
@@ -474,7 +487,7 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
               ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
               empa[cl]=c;
               umbral=emparejamiento(cl, c);
-              if(umbral<k){
+              if(umbral>k){
               ## Mostrar en el mensaje ICMP es para control
                 print fmt("Si son emparejables ICMP request");
               }else{
