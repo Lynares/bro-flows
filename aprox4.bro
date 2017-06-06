@@ -49,7 +49,10 @@ function informacion_coincidencia(c: connection, p: connection){
 
 ## funcion para la comparacion de los flujos, c1 el flujo que esta en el set conex y c2 para el flujo que es candidato a guardarse en matchs
 function emparejamiento(c1: connection, c2: connection ):double {
-
+  local resultado = 0.0; ## Lo ponemos a 0
+  if(c1$uid==c2$uid){
+    return resultado;
+  } else {
   local Nip=1; ## Variable para saber cuantas conexiones tenemos
   local Po1: count; ## Puerto origen del primer flujo
   local Po2: count; ## Puerto origen del segundo flujo
@@ -58,7 +61,7 @@ function emparejamiento(c1: connection, c2: connection ):double {
   local k1 = 1;  ## Variable fija
   local k2 = 10; ## Variable fija
   local dt: double; ## Variable para la diferencia de los tiempos
-  local resultado = 0.0; ## Lo ponemos a 0
+
 
   ## for (s in conex){
 
@@ -79,6 +82,7 @@ function emparejamiento(c1: connection, c2: connection ):double {
             Nip=Nip+1;
 
     }
+
   }
   print fmt("Numero de Nip en table: %d", Nip);
   informacion_coincidencia(c1,c2);
@@ -97,6 +101,8 @@ function emparejamiento(c1: connection, c2: connection ):double {
   dt=(|c1$start_time| - |c2$start_time|);
   resultado=(Nip-1)+(1/((Po1-Po2)+k1))+(1/((Pd1-Pd2)+k1))+(1/(dt+k2));
   return resultado;
+}
+
 
 }
 
