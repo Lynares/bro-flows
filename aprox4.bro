@@ -1,13 +1,9 @@
 
-## Incluyo librerias como en el ejemplo del evento de paquetes eliminados de la documentacion
-## @load base/protocols/conn
-## @load base/protocols/http
-## global conexiones: vector of connection;
-
 ## PRIMERA APROXIMACION con un solo set, simplemente almaceno los paquetes en un set (PARA FLUJOS ACTIVOS) y cuando mueren los elimino
 ## El contenido del set si se ve alterado, pero el tamaño no, pues no es memoria dinamica
 ## Cambio de vector a set por las comparaciones, el tipo vector en bro no las soporta
 global conex: set[connection];
+
 ## Variable global para conocer el tamaño del set
 global tams=0;
 ## Variable global para conocer el numero de paquetes que hay en el archivo pcap
@@ -37,10 +33,24 @@ global umbral: double;
 ## Definimos el umbral, de manera global para hacer las comparaciones
 global k=0.01;
 
+
+## Creo funcion auxiliar para ver la informacion del paquete nuevo que se añade, no de todos los paquetes todo el rato
+function informacion_paquete(c: connection){
+    print fmt("Informacion del paquete nuevo IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+}
+
+## Esta funcion es solo para depuracion, al final sera borrada
+## Creo funcion auxiliar para ver la informacion del paquete que se coincide
+function informacion_coincidencia(c: connection, p: connection){
+    print fmt("Informacion del primer paquete  IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+    print fmt("Informacion del paquete coincidente  IPo: %s , Po: %s , IPd: %s , Pd: %s ", p$id$orig_h, p$id$orig_p, p$id$resp_h, p$id$resp_p);
+}
+
+
 ## funcion para la comparacion de los flujos, c1 el flujo que esta en el set conex y c2 para el flujo que es candidato a guardarse en matchs
 function emparejamiento(c1: connection, c2: connection ):double {
 
-  local Nip=0; ## Variable para saber cuantas conexiones tenemos
+  local Nip=1; ## Variable para saber cuantas conexiones tenemos
   local Po1: count; ## Puerto origen del primer flujo
   local Po2: count; ## Puerto origen del segundo flujo
   local Pd1: count; ## Puerto destino del primer flujo
@@ -50,19 +60,19 @@ function emparejamiento(c1: connection, c2: connection ):double {
   local dt: double; ## Variable para la diferencia de los tiempos
   local resultado = 0.0; ## Lo ponemos a 0
 
-  for (s in conex){
+  ## for (s in conex){
 
-    if(s$id$orig_h == c2$id$orig_h){
-      if(s$id$resp_h == c2$id$resp_h){
-        if(s$id$orig_p == c2$id$orig_p){
-          if(s$id$resp_p == c2$id$resp_p){
-            Nip=Nip+1;
-            break;
-          }
-        }
-      }
-    }
-  }
+  ##  if(s$id$orig_h == c2$id$orig_h){
+  ##    if(s$id$resp_h == c2$id$resp_h){
+  ##      if(s$id$orig_p == c2$id$orig_p){
+  ##        if(s$id$resp_p == c2$id$resp_p){
+  ##          Nip=Nip+1;
+  ##          break;
+  ##        }
+  ##      }
+  ##    }
+  ##  }
+  ## }
 ## Este bucle lo puedo hacer sin ningun problema, pues en los eventos todavia no se ha dicho que se guarde en el set
   for (i in empa){
     if(i$id$orig_h == c1$id$orig_h){
@@ -70,13 +80,13 @@ function emparejamiento(c1: connection, c2: connection ):double {
         if(i$id$orig_p == c1$id$orig_p){
           if(i$id$resp_p == c1$id$resp_p){
             Nip=Nip+1;
-            print fmt("Numero de Nip en table: %d", Nip);
+
           }
         }
       }
     }
   }
-
+  print fmt("Numero de Nip en table: %d", Nip);
   ## Para dp1 y dp2 que son 1-norm usamos la "Manhattan norm" que dice lo siguiente: SAD(x1,x2) = sumatoria(x1i - x2i)
   ## k1 y k2 son dos variables que nosotros le ponemos de forma manual, en este caso las pondremos como locales con 1 y 10 respectivamente
   ## dt es la diferencia de tiempo entre los time stamp de los primeros paquetes de los flujos
@@ -95,56 +105,43 @@ function emparejamiento(c1: connection, c2: connection ):double {
 
 }
 
-## Creo funcion auxiliar para ver la informacion del paquete nuevo que se añade, no de todos los paquetes todo el rato
-function informacion_paquete(c: connection){
-    print fmt("Informacion del paquete nuevo IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-}
-
-## Esta funcion es solo para depuracion, al final sera borrada
-## Creo funcion auxiliar para ver la informacion del paquete que se coincide
-function informacion_coincidencia(c: connection, p: connection){
-    print fmt("Informacion del primer paquete  IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-    print fmt("Informacion del paquete coincidente  IPo: %s , Po: %s , IPd: %s , Pd: %s ", p$id$orig_h, p$id$orig_p, p$id$resp_h, p$id$resp_p);
-}
-
-
 ## Cada vez que entra un nuevo paquete lo comparo con lo que ya tengo en el set
 ## Este evento se lanza con cada nueva conexion de un flujo que no sea conocido
 ## Generated for every new connection. This event is raised with the first packet of a previously unknown connection. Bro uses a flow-based definition of “connection” here that includes not only TCP sessions but also UDP and ICMP flows.
 event new_connection(c: connection){
 
 ## Si el set esta vacio meto el primer paquete
-  ## if(tam==0){
+   if(tam==0){
     add conex[c];
-  ## }
+   }
 ## Sumamos uno al tamaño del set
     tam=tam+1;
 
 ## Variable booleana para controlar el acceso al set
-    ## local met = F;
+    local met = F;
 
-    ## for que va recorriendo el set y haciendo comparaciones
-    ## for(s in conex){
-    ## Copiamos en la variable local para comparar con todo lo que hay en el set
-      ## if(s$id$orig_h != c$id$orig_h){
-        ## if(s$id$resp_h != c$id$resp_h){
-          ## if(s$id$orig_p != c$id$orig_p){
-            ## if(s$id$resp_p != c$id$resp_p){
-              ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
-              ## met=T;
-            ## }
-          ## }
-        ## }
-      ## }
+## for que va recorriendo el set y haciendo comparaciones
+    for(s in conex){
+## Copiamos en la variable local para comparar con todo lo que hay en el set
+      if(s$id$orig_h != c$id$orig_h){
+        if(s$id$resp_h != c$id$resp_h){
+          if(s$id$orig_p != c$id$orig_p){
+            if(s$id$resp_p != c$id$resp_p){
+## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
+              met=T;
+             }
+           }
+         }
+       }
 
-    ## }
-    ## Con la variable booleana controlamos el crecimiento del set
-    ## if (met==T){
-      ## add conex[c];
+     }
+## Con la variable booleana controlamos el crecimiento del set
+     if (met==T){
+      add conex[c];
       tams=tams+1;
       ## print fmt("Meto un paquete nuevo por la conexion de origen distinta");
-    ## }
-    ## met=F;
+     }
+     met=F;
     ## print fmt("Numero de paquetes al momento: %d", tam);
     ## print fmt("Tamanio del set: %d", tams);
     ## informacion_paquete(c);
@@ -167,18 +164,12 @@ event connection_state_remove(c: connection){
 
 ## for que va recorriendo el set y haciendo comparaciones
     for(s in matchs){
-      if(s$id$orig_h == c$id$orig_h){
-        if(s$id$resp_h == c$id$resp_h){
-          if(s$id$orig_p == c$id$orig_p){
-            if(s$id$resp_p == c$id$resp_p){
-              ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
+      if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
               met=T;
-              ## Al existir otro flujo lo copiamos en cl
+## Al existir otro flujo lo copiamos en cl
               cl=s;
               break;
-            }
-          }
-        }
       }
     }
 
@@ -188,14 +179,13 @@ event connection_state_remove(c: connection){
       delete conex[c];
       add conex[cl];
       delete matchs[cl];
-      elimi=elimi+1;
     ## decrece la variable de matchs
       nmatchs=nmatchs-1;
     ## Controlamos que el tamaño que manejamos por pantalla del set no sea menor que 0 para que no de valores basura
     } else {
       delete conex[c];
-      elimi=elimi+1;
     }
+    elimi=elimi+1;
     if(tams==0){
       tams=0;
     }
@@ -204,8 +194,8 @@ event connection_state_remove(c: connection){
     }
 
     met=F;
-  ##  print fmt("Tamanio del set: %d", tams);
-  ##  informacion_paquete(c);
+    ##  print fmt("Tamanio del set: %d", tams);
+    ##  informacion_paquete(c);
 
 }
 
@@ -213,61 +203,50 @@ event connection_state_remove(c: connection){
 ## Solo sirve para conexiones TCP, se genera cuando ve un SYN-ACK que responde al handshake de un TCP
 event connection_established(c: connection){
 
-  ## Si el set esta vacio meto el primer paquete
-  ## ¿Se puede eliminar?
-    if(tam==0){
-     add conex[c];
-   } else {
   ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes que no coinciden
     local cl: connection;
-    local rest: connection;
+
   ## Variable booleana para controlar el acceso al set
     local met = F;
 
   ## for que va recorriendo el set y haciendo comparaciones
     for(s in conex){
-      ## Copiamos en la variable local para comparar con todo lo que hay en el set
 
-      if(s$id$orig_h == c$id$orig_h){
-        if(s$id$resp_h == c$id$resp_h){
-          if(s$id$orig_p == c$id$orig_p){
-            if(s$id$resp_p == c$id$resp_p){
-              ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
-              met=T;
-              cl=s;
-              ## informacion_coincidencia(c, cl);
-              umbral=emparejamiento(cl, c);
-              if(umbral>k){
-              ## Mostrar en el mensaje TCP es para control
-                print fmt("Si son emparejables TCP");
-                ## Metemos la informacion en la tabla
-                empa[cl]=c;
-                if (met==T){
-                  add matchs[c];
-                  ## Sumamos uno al tamaño del set de matchs
-                  tamm=tamm+1;
-                  ## print fmt("Encontrado un paquete TCP que coincide con otro de las conexiones que ya tenemos");
-                  nmatchs=nmatchs+1;
-                  ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-                }
-                met=F;
-              }else{
-                print fmt("No son emparejables TCP");
-              }
-              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-              ## print fmt("Metido en tabla");
-              break;
-            }
+      if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+        ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
+        met=T;
+        cl=s;
+        ## informacion_coincidencia(c, cl);
+        umbral=emparejamiento(cl, c);
+        if(umbral>k){
+          ## Mostrar en el mensaje TCP es para control
+          print fmt("Si son emparejables TCP");
+          ## Metemos la informacion en la tabla
+          empa[cl]=c;
+          if (met==T){
+            add matchs[c];
+            ## Sumamos uno al tamaño del set de matchs
+            tamm=tamm+1;
+            ## print fmt("Encontrado un paquete TCP que coincide con otro de las conexiones que ya tenemos");
+            nmatchs=nmatchs+1;
+            ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
           }
-        }
-      }
+          met=F;
+          }else{
+            print fmt("No son emparejables TCP");
+          }
+          ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+          ## print fmt("Metido en tabla");
+          break;
 
     }
-    ## Con la variable booleana controlamos el crecimiento del set
 
-    ## print fmt("Tamanio del set matchs: %d", tamm);
-    ## informacion_paquete(c);
   }
+  ## Con la variable booleana controlamos el crecimiento del set
+
+  ## print fmt("Tamanio del set matchs: %d", tamm);
+  ## informacion_paquete(c);
+
 }
 
 ## Para protocolo UDP usaremos otro evento
@@ -275,10 +254,7 @@ event connection_established(c: connection){
 ## udp_request se lanza por cada paquete UDP del flujo que es enviado por el origen.
 event udp_request(u: connection){
 
-  ## Si el set esta vacio meto el primer paquete
-    if(tam==0){
-     add conex[u];
-    } else {
+
   ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes que no coinciden
     local ul: connection;
   ## Variable booleana para controlar el acceso al set
@@ -287,10 +263,7 @@ event udp_request(u: connection){
   ## for que va recorriendo el set y haciendo comparaciones
      for(s in conex){
 
-       if(s$id$orig_h == u$id$orig_h){
-         if(s$id$resp_h == u$id$resp_h){
-           if(s$id$orig_p == u$id$orig_p){
-             if(s$id$resp_p == u$id$resp_p){
+       if((s$id$orig_h == u$id$orig_h) && (s$id$resp_h == u$id$resp_h) && (s$id$orig_p == u$id$orig_p) && (s$id$resp_p == u$id$resp_p)){
                ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
                met=T;
                ul=s;
@@ -308,9 +281,7 @@ event udp_request(u: connection){
                 ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
                 ## print fmt("Metido en tabla");
                 break;
-               }
-             }
-           }
+
          }
 
        }
@@ -324,17 +295,13 @@ event udp_request(u: connection){
        met=F;
        ## print fmt("Tamanio del set matchs: %d", tamm);
        ## informacion_paquete(u);
-  }
+
 }
 
 ## udp_reply se lanza por cada paquete UDP del flujo que es devuelto por el destinatario del primer envio.
 ## cabecera del evento event udp_reply(u: connection)
 event udp_reply(u: connection){
 
-  ## Si el set esta vacio meto el primer paquete
-    if(tam==0){
-     add conex[u];
-    } else {
   ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes que no coinciden
     local ul: connection;
     ## Variable booleana para controlar el acceso al set
@@ -343,10 +310,7 @@ event udp_reply(u: connection){
   ## for que va recorriendo el set y haciendo comparaciones
      for(s in conex){
 
-       if(s$id$orig_h == u$id$orig_h){
-         if(s$id$resp_h == u$id$resp_h){
-           if(s$id$orig_p == u$id$orig_p){
-             if(s$id$resp_p == u$id$resp_p){
+       if((s$id$orig_h == u$id$orig_h) && (s$id$resp_h == u$id$resp_h) && (s$id$orig_p == u$id$orig_p) && (s$id$resp_p == u$id$resp_p)){
                ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
                met=T;
                ul=s;
@@ -364,9 +328,7 @@ event udp_reply(u: connection){
                 ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
                 ## print fmt("Metido en tabla");
                 break;
-               }
-             }
-           }
+
          }
 
        }
@@ -380,7 +342,7 @@ event udp_reply(u: connection){
        met=F;
        ## print fmt("Tamanio del set matchs: %d", tamm);
        ## informacion_paquete(u);
-  }
+
 }
 
 
@@ -406,10 +368,6 @@ event udp_reply(u: connection){
 
 event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, payload: string){
 
-  ## Si el set esta vacio meto el primer paquete
-    if(tam==0){
-     add conex[c];
-   } else {
      ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes que no coinciden
      local cl: connection;
      ## Variable booleana para controlar el acceso al set
@@ -418,10 +376,7 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
      ## for que va recorriendo el set y haciendo comparaciones
      for(s in conex){
 
-       if(s$id$orig_h == c$id$orig_h){
-         if(s$id$resp_h == c$id$resp_h){
-           if(s$id$orig_p == c$id$orig_p){
-             if(s$id$resp_p == c$id$resp_p){
+       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
                ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
                met=T;
                cl=s;
@@ -439,9 +394,7 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
                ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
                ## print fmt("Metido en tabla");
                break;
-             }
-           }
-         }
+
        }
 
      }
@@ -455,15 +408,11 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
      met=F;
      ## print fmt("Tamanio del set matchs: %d", tamm);
      ## informacion_paquete(c);
-  }
+
 }
 
 event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, payload: string){
 
-  ## Si el set esta vacio meto el primer paquete
-    if(tam==0){
-     add conex[c];
-   } else {
      ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes que no coinciden
      local cl: connection;
      ## Variable booleana para controlar el acceso al set
@@ -472,10 +421,7 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
      ## for que va recorriendo el set y haciendo comparaciones
      for(s in conex){
 
-       if(s$id$orig_h == c$id$orig_h){
-         if(s$id$resp_h == c$id$resp_h){
-           if(s$id$orig_p == c$id$orig_p){
-             if(s$id$resp_p == c$id$resp_p){
+       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
                ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
                met=T;
                cl=s;
@@ -493,9 +439,7 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
                ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
                ## print fmt("Metido en tabla");
                break;
-             }
-           }
-         }
+
        }
 
      }
@@ -509,7 +453,7 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
      met=F;
      ## print fmt("Tamanio del set matchs: %d", tamm);
      ## informacion_paquete(c);
-  }
+
 }
 
 

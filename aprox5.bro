@@ -1,9 +1,4 @@
 
-## Incluyo librerias como en el ejemplo del evento de flujos eliminados de la documentacion
-## @load base/protocols/conn
-## @load base/protocols/http
-## global conexiones: vector of connection;
-
 ## PRIMERA APROXIMACION con un solo set, simplemente almaceno los flujos en un set (PARA FLUJOS ACTIVOS) y cuando mueren los elimino
 ## El contenido del set si se ve alterado, pero el tamaño no, pues no es memoria dinamica
 ## Cambio de vector a set por las comparaciones, el tipo vector en bro no las soporta
@@ -33,7 +28,7 @@ global emparejados: table[connection] of connection;
 global umbral: double;
 
 ## Definimos el umbral, de manera global para hacer las comparaciones
-global k=0.001;
+global k=0.01;
 
 
 ## Creo funcion auxiliar para ver la informacion del flujo nuevo que se añade, no de todos los flujos todo el rato
@@ -64,20 +59,20 @@ function emparejamiento(c1: connection, c2: connection ):double {
   print c2$uid;
   ## for (s in conex){
 
-    ## if(s$id$orig_h == c1$id$orig_h){
-      ## if(s$id$resp_h == c1$id$resp_h){
-        ## if(s$id$orig_p == c1$id$orig_p){
-          ## if(s$id$resp_p == c1$id$resp_p){
-            ## Nip=Nip+1;
-            ## print fmt("Numero de Nip sin table: %d", Nip);
-            ## break;
-          ## }
-        ## }
-      ## }
-    ## }
+  ##   if(s$id$orig_h == c1$id$orig_h){
+  ##     if(s$id$resp_h == c1$id$resp_h){
+  ##       if(s$id$orig_p == c1$id$orig_p){
+  ##         if(s$id$resp_p == c1$id$resp_p){
+  ##           Nip=Nip+1;
+  ##           print fmt("Numero de Nip sin table: %d", Nip);
+  ##           break;
+  ##         }
+  ##       }
+  ##     }
+  ##   }
   ## }
   if(c1$uid==c2$uid){
-    print fmt("Son el mismo flujo, que haces aqui?");
+    print fmt("Son el mismo flujo, no se realiza incremento en Nip");
   }else{
 ## Este bucle lo puedo hacer sin ningun problema, pues en los eventos todavia no se ha dicho que se guarde en el set
   for (i in empa){
@@ -112,13 +107,15 @@ function emparejamiento(c1: connection, c2: connection ):double {
   ## local t2: double;
   ## t1 = time_to_double(c1$start_time);
   ## t2 = time_to_double(c2$start_time);
+
   dt=(|c1$start_time| - |c2$start_time|);
+
   ## print fmt("Tiempo paquete 1: %s", t1);
   ## print fmt("Tiempo paquete 2: %s", t2);
   print fmt("Diferencia de tiempo: %s", dt);
   resultado=(Nip-1)+(1/((Po1-Po2)+k1))+(1/((Pd1-Pd2)+k1))+(1/(dt+k2));
-}
-  return resultado;
+ }
+ return resultado;
 
 }
 
@@ -137,9 +134,9 @@ event new_connection(c: connection){
 ## Variable booleana para controlar el acceso al set
      local met = F;
 
-    ## for que va recorriendo el set y haciendo comparaciones
+## for que va recorriendo el set y haciendo comparaciones
      for(s in conex){
-    ## Copiamos en la variable local para comparar con todo lo que hay en el set
+## Copiamos en la variable local para comparar con todo lo que hay en el set
        if(s$id$orig_h != c$id$orig_h){
          if(s$id$resp_h != c$id$resp_h){
            if(s$id$orig_p != c$id$orig_p){
@@ -181,18 +178,12 @@ event connection_state_remove(c: connection){
 
 ## for que va recorriendo el set y haciendo comparaciones
     for(s in empa){
-      if(s$id$orig_h == c$id$orig_h){
-        if(s$id$resp_h == c$id$resp_h){
-          if(s$id$orig_p == c$id$orig_p){
-            if(s$id$resp_p == c$id$resp_p){
-              ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
+      if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
               esta=T;
-              ## Al existir otro flujo lo copiamos en cl
+## Al existir otro flujo lo copiamos en cl
               cl=s;
               break;
-            }
-          }
-        }
       }
     }
 
@@ -202,13 +193,12 @@ event connection_state_remove(c: connection){
       delete conex[c];
       add conex[cl];
       delete empa[cl];
-      ##print fmt("Hemos borrado, queda? ");
-      ##print empa[cl];
-      elimi=elimi+1;
+      ## print fmt("Hemos borrado");
+      ## print empa[cl];
     } else {
       delete conex[c];
-      elimi=elimi+1;
     }
+    elimi=elimi+1;
     ## Quitamos uno al tamaño del set
     tams=tams-1;
     esta=F;
@@ -220,8 +210,6 @@ event connection_state_remove(c: connection){
 ## Cuando la conexion se establece vemos si hay flujos que emparejar y los metemos en empa
 ## Solo sirve para conexiones TCP, se genera cuando ve un SYN-ACK que responde al handshake de un TCP
 event connection_established(c: connection){
-
-  ## Si el set esta vacio meto el primer flujo
 
   ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
     local cl: connection;
@@ -256,7 +244,7 @@ event connection_established(c: connection){
 
   }
 
-    ## informacion_flujo(c);
+  ## informacion_flujo(c);
 
 }
 
@@ -264,8 +252,6 @@ event connection_established(c: connection){
 ## Son funciones muy costosas por lo que se deberia de evitar su uso a menos que sea necesario
 ## udp_request se lanza por cada flujo UDP del flujo que es enviado por el origen.
 event udp_request(u: connection){
-
-  ## Si el set esta vacio meto el primer flujo
 
   ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
     local ul: connection;
@@ -368,8 +354,6 @@ event udp_reply(u: connection){
 ## payload:	The message-specific data of the packet payload, i.e., everything after the first 8 bytes of the ICMP header.
 
 event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, payload: string){
-
-  ## Si el set esta vacio meto el primer flujo
 
      ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
      local cl: connection;
