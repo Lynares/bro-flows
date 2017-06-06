@@ -17,9 +17,9 @@ global elimi=0;
 ## Incluidos TCP, UDP e ICMP
 global matchs: set[connection]; ## Tal vez una table con indice connection para saber con cual esta emparejado (?)
 ## variable global para controlar su crecimiento
-global tamm=0;
+## global tamm=0;
 ## variable global para ver la cantidad de matchs distintos que hacemos
-global nmatchs=0;
+## global nmatchs=0;
 
 ## TERCERA APROXIMACION... CREO TABLE PARA ALMACENAR EN EL INDICE LA INFORMACION DEL PRIMER SET Y METERLE LA INFORMACION DEL SEGUNDO CUANDO CASEN.
 global empa: table[connection] of connection;
@@ -180,7 +180,7 @@ event connection_state_remove(c: connection){
       add conex[cl];
       delete matchs[cl];
     ## decrece la variable de matchs
-      nmatchs=nmatchs-1;
+      ## nmatchs= nmatchs-1;
     ## Controlamos que el tamaño que manejamos por pantalla del set no sea menor que 0 para que no de valores basura
     } else {
       delete conex[c];
@@ -226,9 +226,9 @@ event connection_established(c: connection){
           if (met==T){
             add matchs[c];
             ## Sumamos uno al tamaño del set de matchs
-            tamm=tamm+1;
+            ## tamm= tamm+1;
             ## print fmt("Encontrado un paquete TCP que coincide con otro de las conexiones que ya tenemos");
-            nmatchs=nmatchs+1;
+            ## nmatchs= nmatchs+1;
             ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
           }
           met=F;
@@ -288,9 +288,9 @@ event udp_request(u: connection){
       ## Con la variable booleana controlamos el crecimiento del set
        if (met==T){
          add matchs[u];
-         tamm=tamm+1;
+         ## tamm = tamm+1;
          ## print fmt("Encontrado un paquete UDP request que coincide con otro de las conexiones que ya tenemos");
-         nmatchs=nmatchs+1;
+         ## nmatchs= nmatchs+1;
        }
        met=F;
        ## print fmt("Tamanio del set matchs: %d", tamm);
@@ -335,9 +335,9 @@ event udp_reply(u: connection){
        ## Con la variable booleana controlamos el crecimiento del set
        if (met==T){
          add matchs[u];
-         tamm=tamm+1;
+         ## tamm=tamm+1;
          ## print fmt("Encontrado un paquete UDP request que coincide con otro de las conexiones que ya tenemos");
-         nmatchs=nmatchs+1;
+         ## nmatchs= nmatchs+1;
        }
        met=F;
        ## print fmt("Tamanio del set matchs: %d", tamm);
@@ -401,9 +401,9 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
      ## Con la variable booleana controlamos el crecimiento del set
      if (met==T){
        add matchs[c];
-       tamm=tamm+1;
+       ## tamm= tamm+1;
        ## print fmt("Encontrado un paquete ICMP request que coincide con otro de las conexiones que ya tenemos");
-       nmatchs=nmatchs+1;
+       ## nmatchs= nmatchs+1;
      }
      met=F;
      ## print fmt("Tamanio del set matchs: %d", tamm);
@@ -446,9 +446,9 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
      ## Con la variable booleana controlamos el crecimiento del set
      if (met==T){
        add matchs[c];
-       tamm=tamm+1;
+       ## tamm= tamm+1;
        ## print fmt("Encontrado un paquete ICMP request que coincide con otro de las conexiones que ya tenemos");
-       nmatchs=nmatchs+1;
+       ## nmatchs= nmatchs+1;
      }
      met=F;
      ## print fmt("Tamanio del set matchs: %d", tamm);
@@ -463,13 +463,14 @@ event bro_init(){
 }
 ## Evento que se genera cuando BRO va a tenerminar, menos si se realiza mediante una llamada a la funcion exit (ver documentacion)
 event bro_done(){
-  print fmt("El numero total de coincidencias es: %d", nmatchs);
-  print fmt("El tamaño maximo del set de coincidencias es: %d", |matchs|);
+  ## print fmt("El numero total de coincidencias es: %d", nmatchs);
+  ## print fmt("El tamaño maximo del set de coincidencias es: %d", |matchs|);
   ## Mostramos lo que tenemos en la tabla
   for(s in empa){
     ## print fmt("Tamaño de la fila de la tabla: %d", |empa[s]|);
     print fmt("Tenemos: %s en %s a %s en %s", empa[s]$id$orig_h, empa[s]$id$orig_p, empa[s]$id$resp_h, empa[s]$id$resp_p);
     print fmt(" de %s en %s a %s en %s", s$id$orig_h, s$id$orig_p, s$id$resp_h, s$id$resp_p);
   }
+  print fmt("Total de flujos: %d", tam);
   print fmt("Hora de finalizacion: %s", current_time());
 }
