@@ -76,15 +76,9 @@ function emparejamiento(c1: connection, c2: connection ):double {
   }else{
 ## Este bucle lo puedo hacer sin ningun problema, pues en los eventos todavia no se ha dicho que se guarde en el set
   for (i in empa){
-    if(i$id$orig_h == c2$id$orig_h){
-      if(i$id$resp_h == c2$id$resp_h){
-        if(i$id$orig_p == c2$id$orig_p){
-          if(i$id$resp_p == c2$id$resp_p){
+    if((i$id$orig_h == c2$id$orig_h) && (i$id$resp_h == c2$id$resp_h) && (i$id$orig_p == c2$id$orig_p) && (i$id$resp_p == c2$id$resp_p)){
             Nip=Nip+1;
 
-          }
-        }
-      }
     }
   }
   print fmt("Numero de Nip en table: %d", Nip);

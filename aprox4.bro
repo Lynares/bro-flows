@@ -1,19 +1,19 @@
 
-## PRIMERA APROXIMACION con un solo set, simplemente almaceno los paquetes en un set (PARA FLUJOS ACTIVOS) y cuando mueren los elimino
+## PRIMERA APROXIMACION con un solo set, simplemente almaceno los flujos en un set (PARA FLUJOS ACTIVOS) y cuando mueren los elimino
 ## El contenido del set si se ve alterado, pero el tamaño no, pues no es memoria dinamica
 ## Cambio de vector a set por las comparaciones, el tipo vector en bro no las soporta
 global conex: set[connection];
 
 ## Variable global para conocer el tamaño del set
 global tams=0;
-## Variable global para conocer el numero de paquetes que hay en el archivo pcap
+## Variable global para conocer el numero de flujos que hay en el archivo pcap
 global tam=0;
-## Variable para ver los paquetes que eliminamos y comprobar si son los mismos que los que hemos añadido
+## Variable para ver los flujos que eliminamos y comprobar si son los mismos que los que hemos añadido
 global elimi=0;
 
 ## SEGUNDA APROXIMACION... FICHERO aprox2.bro CREO SET COMPLEMENTARIO PARA ALMACENAR LOS QUE YA TENGO ALMACENADOS EN ALGUN MOMENTO
 
-## set para almacenar los paquetes que coinciden con los que ya tenemos en conex... (PARA FLUJOS EMPAREJADOS)
+## set para almacenar los flujos que coinciden con los que ya tenemos en conex... (PARA FLUJOS EMPAREJADOS)
 ## Incluidos TCP, UDP e ICMP
 global matchs: set[connection]; ## Tal vez una table con indice connection para saber con cual esta emparejado (?)
 ## variable global para controlar su crecimiento
@@ -34,16 +34,16 @@ global umbral: double;
 global k=0.01;
 
 
-## Creo funcion auxiliar para ver la informacion del paquete nuevo que se añade, no de todos los paquetes todo el rato
+## Creo funcion auxiliar para ver la informacion del flujonuevo que se añade, no de todos los flujos todo el rato
 function informacion_paquete(c: connection){
-    print fmt("Informacion del paquete nuevo IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+    print fmt("Informacion del flujonuevo IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
 }
 
 ## Esta funcion es solo para depuracion, al final sera borrada
-## Creo funcion auxiliar para ver la informacion del paquete que se coincide
+## Creo funcion auxiliar para ver la informacion del flujoque se coincide
 function informacion_coincidencia(c: connection, p: connection){
-    print fmt("Informacion del primer paquete  IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-    print fmt("Informacion del paquete coincidente  IPo: %s , Po: %s , IPd: %s , Pd: %s ", p$id$orig_h, p$id$orig_p, p$id$resp_h, p$id$resp_p);
+    print fmt("Informacion del primer flujo IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+    print fmt("Informacion del flujocoincidente  IPo: %s , Po: %s , IPd: %s , Pd: %s ", p$id$orig_h, p$id$orig_p, p$id$resp_h, p$id$resp_p);
 }
 
 
@@ -75,21 +75,16 @@ function emparejamiento(c1: connection, c2: connection ):double {
   ## }
 ## Este bucle lo puedo hacer sin ningun problema, pues en los eventos todavia no se ha dicho que se guarde en el set
   for (i in empa){
-    if(i$id$orig_h == c1$id$orig_h){
-      if(i$id$resp_h == c1$id$resp_h){
-        if(i$id$orig_p == c1$id$orig_p){
-          if(i$id$resp_p == c1$id$resp_p){
+    if((i$id$orig_h == c2$id$orig_h) && (i$id$resp_h == c2$id$resp_h) && (i$id$orig_p == c2$id$orig_p) && (i$id$resp_p == c2$id$resp_p)){
             Nip=Nip+1;
 
-          }
-        }
-      }
     }
   }
   print fmt("Numero de Nip en table: %d", Nip);
+  informacion_coincidencia(c1,c2);
   ## Para dp1 y dp2 que son 1-norm usamos la "Manhattan norm" que dice lo siguiente: SAD(x1,x2) = sumatoria(x1i - x2i)
   ## k1 y k2 son dos variables que nosotros le ponemos de forma manual, en este caso las pondremos como locales con 1 y 10 respectivamente
-  ## dt es la diferencia de tiempo entre los time stamp de los primeros paquetes de los flujos
+  ## dt es la diferencia de tiempo entre los time stamp de los primeros flujos de los flujos
   ## el tipo time se supone que es como un double, por lo tanto podremos restarlos sin problemas
   ## para la comparacion de puertos primero tendremos que hacer uso de la funcion  port_to_count [https://www.bro.org/sphinx/scripts/base/bif/bro.bif.bro.html#id-port_to_count]
   ## la cual nos pasa el puerto, que recordamos que va tambien con un string en el cual se nos dice que tipo es, a un
@@ -105,7 +100,7 @@ function emparejamiento(c1: connection, c2: connection ):double {
 
 }
 
-## Cada vez que entra un nuevo paquete lo comparo con lo que ya tengo en el set
+## Cada vez que entra un nuevo flujolo comparo con lo que ya tengo en el set
 ## Este evento se lanza con cada nueva conexion de un flujo que no sea conocido
 ## Generated for every new connection. This event is raised with the first packet of a previously unknown connection. Bro uses a flow-based definition of “connection” here that includes not only TCP sessions but also UDP and ICMP flows.
 event new_connection(c: connection){
@@ -139,17 +134,17 @@ event new_connection(c: connection){
      if (met==T){
       add conex[c];
       tams=tams+1;
-      ## print fmt("Meto un paquete nuevo por la conexion de origen distinta");
+      ## print fmt("Meto un flujonuevo por la conexion de origen distinta");
      }
      met=F;
-    ## print fmt("Numero de paquetes al momento: %d", tam);
+    ## print fmt("Numero de flujos al momento: %d", tam);
     ## print fmt("Tamanio del set: %d", tams);
     ## informacion_paquete(c);
 
 }
 
 ## Cuando la conexion va a ser borrada la eliminamos del set y en caso de tener otra conexion en el matchs la añadimos
-## se obtienen los mismos paquetes añadidos que eliminados, por lo tanto hay que controlar cuando lo añadimos y cuando lo eliminamos
+## se obtienen los mismos flujos añadidos que eliminados, por lo tanto hay que controlar cuando lo añadimos y cuando lo eliminamos
 ## Sirve para TCP, UDP e ICMP
 ## Generated when a connection’s internal state is about to be removed from memory. Bro generates this event reliably
 ## once for every connection when it is about to delete the internal state. As such, the event is well-suited for
@@ -199,11 +194,11 @@ event connection_state_remove(c: connection){
 
 }
 
-## Cuando la conexion se establece vemos si hay paquetes que emparejar y los metemos en matchs
+## Cuando la conexion se establece vemos si hay flujos que emparejar y los metemos en matchs
 ## Solo sirve para conexiones TCP, se genera cuando ve un SYN-ACK que responde al handshake de un TCP
 event connection_established(c: connection){
 
-  ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes que no coinciden
+  ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
     local cl: connection;
 
   ## Variable booleana para controlar el acceso al set
@@ -227,7 +222,7 @@ event connection_established(c: connection){
             add matchs[c];
             ## Sumamos uno al tamaño del set de matchs
             ## tamm= tamm+1;
-            ## print fmt("Encontrado un paquete TCP que coincide con otro de las conexiones que ya tenemos");
+            ## print fmt("Encontrado un flujoTCP que coincide con otro de las conexiones que ya tenemos");
             ## nmatchs= nmatchs+1;
             ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
           }
@@ -251,11 +246,11 @@ event connection_established(c: connection){
 
 ## Para protocolo UDP usaremos otro evento
 ## Son funciones muy costosas por lo que se deberia de evitar su uso a menos que sea necesario
-## udp_request se lanza por cada paquete UDP del flujo que es enviado por el origen.
+## udp_request se lanza por cada flujoUDP del flujo que es enviado por el origen.
 event udp_request(u: connection){
 
 
-  ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes que no coinciden
+  ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
     local ul: connection;
   ## Variable booleana para controlar el acceso al set
     local met = F;
@@ -289,7 +284,7 @@ event udp_request(u: connection){
        if (met==T){
          add matchs[u];
          ## tamm = tamm+1;
-         ## print fmt("Encontrado un paquete UDP request que coincide con otro de las conexiones que ya tenemos");
+         ## print fmt("Encontrado un flujoUDP request que coincide con otro de las conexiones que ya tenemos");
          ## nmatchs= nmatchs+1;
        }
        met=F;
@@ -298,11 +293,11 @@ event udp_request(u: connection){
 
 }
 
-## udp_reply se lanza por cada paquete UDP del flujo que es devuelto por el destinatario del primer envio.
+## udp_reply se lanza por cada flujoUDP del flujo que es devuelto por el destinatario del primer envio.
 ## cabecera del evento event udp_reply(u: connection)
 event udp_reply(u: connection){
 
-  ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes que no coinciden
+  ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
     local ul: connection;
     ## Variable booleana para controlar el acceso al set
     local met = F;
@@ -336,7 +331,7 @@ event udp_reply(u: connection){
        if (met==T){
          add matchs[u];
          ## tamm=tamm+1;
-         ## print fmt("Encontrado un paquete UDP request que coincide con otro de las conexiones que ya tenemos");
+         ## print fmt("Encontrado un flujoUDP request que coincide con otro de las conexiones que ya tenemos");
          ## nmatchs= nmatchs+1;
        }
        met=F;
@@ -346,7 +341,7 @@ event udp_reply(u: connection){
 }
 
 
-## udp_session_done se lanza cuando la conexion UDP finaliza, por lo tanto tendremos que borrar del set conex los paquetes que se correspondan
+## udp_session_done se lanza cuando la conexion UDP finaliza, por lo tanto tendremos que borrar del set conex los flujos que se correspondan
 ## Generated when a UDP session for a supported protocol has finished. Some of Bro’s application-layer UDP analyzers flag the end of a session by raising this event. Currently, the analyzers for DNS, NTP, Netbios, Syslog, AYIYA, Teredo, and GTPv1 support this.
 ## Segun la documentacion esto es soportado por los siguientes protocolos DNS, NTP, Netbios, Syslog, AYIYA, Teredo y GTPv1.
 ## la cabecera es event udp_session_done(u: connection)
@@ -368,7 +363,7 @@ event udp_reply(u: connection){
 
 event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, payload: string){
 
-     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes que no coinciden
+     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
      local cl: connection;
      ## Variable booleana para controlar el acceso al set
      local met = F;
@@ -402,7 +397,7 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
      if (met==T){
        add matchs[c];
        ## tamm= tamm+1;
-       ## print fmt("Encontrado un paquete ICMP request que coincide con otro de las conexiones que ya tenemos");
+       ## print fmt("Encontrado un flujoICMP request que coincide con otro de las conexiones que ya tenemos");
        ## nmatchs= nmatchs+1;
      }
      met=F;
@@ -413,7 +408,7 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
 
 event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, payload: string){
 
-     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar paquetes que no coinciden
+     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
      local cl: connection;
      ## Variable booleana para controlar el acceso al set
      local met = F;
@@ -447,7 +442,7 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
      if (met==T){
        add matchs[c];
        ## tamm= tamm+1;
-       ## print fmt("Encontrado un paquete ICMP request que coincide con otro de las conexiones que ya tenemos");
+       ## print fmt("Encontrado un flujoICMP request que coincide con otro de las conexiones que ya tenemos");
        ## nmatchs= nmatchs+1;
      }
      met=F;
