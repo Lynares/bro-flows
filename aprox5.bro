@@ -108,7 +108,13 @@ function emparejamiento(c1: connection, c2: connection ):double {
   Pd1=port_to_count(c1$id$resp_p);
   Po2=port_to_count(c2$id$orig_p);
   Pd2=port_to_count(c2$id$resp_p);
+  ## local t1: double;
+  ## local t2: double;
+  ## t1 = time_to_double(c1$start_time);
+  ## t2 = time_to_double(c2$start_time);
   dt=(|c1$start_time| - |c2$start_time|);
+  ## print fmt("Tiempo paquete 1: %s", t1);
+  ## print fmt("Tiempo paquete 2: %s", t2);
   print fmt("Diferencia de tiempo: %s", dt);
   resultado=(Nip-1)+(1/((Po1-Po2)+k1))+(1/((Pd1-Pd2)+k1))+(1/(dt+k2));
 }
