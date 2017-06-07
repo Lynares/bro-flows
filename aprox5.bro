@@ -57,20 +57,16 @@ function emparejamiento(c1: connection, c2: connection ):double {
   local resultado = 0.0; ## Lo ponemos a 0
   print c1$uid;
   print c2$uid;
+## Podemos saltarnos este bucle si inicializamos Nip a 1
   ## for (s in conex){
 
-  ##   if(s$id$orig_h == c1$id$orig_h){
-  ##     if(s$id$resp_h == c1$id$resp_h){
-  ##       if(s$id$orig_p == c1$id$orig_p){
-  ##         if(s$id$resp_p == c1$id$resp_p){
+  ##   if((s$id$orig_h == c1$id$orig_h) && (s$id$resp_h == c1$id$resp_h) && (s$id$orig_p == c1$id$orig_p) && (s$id$resp_p == c1$id$resp_p)){
   ##           Nip=Nip+1;
   ##           print fmt("Numero de Nip sin table: %d", Nip);
   ##           break;
-  ##         }
-  ##       }
-  ##     }
   ##   }
   ## }
+
   if(c1$uid==c2$uid){
     print fmt("Son el mismo flujo, no se realiza incremento en Nip");
   }else{
@@ -131,23 +127,17 @@ event new_connection(c: connection){
 ## for que va recorriendo el set y haciendo comparaciones
      for(s in conex){
 ## Copiamos en la variable local para comparar con todo lo que hay en el set
-       if(s$id$orig_h != c$id$orig_h){
-         if(s$id$resp_h != c$id$resp_h){
-           if(s$id$orig_p != c$id$orig_p){
-             if(s$id$resp_p != c$id$resp_p){
+       if((s$id$orig_h != c$id$orig_h) && (s$id$resp_h != c$id$resp_h) && (s$id$orig_p != c$id$orig_p) && (s$id$resp_p != c$id$resp_p)){
                ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
                met=T;
-             }
-           }
-         }
        }
 
      }
     ## Con la variable booleana controlamos el crecimiento del set
      if (met==T){
        add conex[c];
-      tams=tams+1;
-      ## print fmt("Meto un flujo nuevo por la conexion de origen distinta");
+       tams=tams+1;
+       ## print fmt("Meto un flujo nuevo por la conexion de origen distinta");
      }
      met=F;
     ## print fmt("Numero de flujos al momento: %d", tam);
@@ -212,27 +202,27 @@ event connection_established(c: connection){
   for(s in conex){
 
     if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
-            if(s$uid==c$uid){
-              next;
-            } else {
+      if(s$uid==c$uid){
+        next;
+      } else {
 
-            cl=s;
-            ## informacion_coincidencia(c, cl);
-            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
-            umbral=emparejamiento(cl, c);
-            if(umbral>k){
-              ## Mostrar en el mensaje TCP es para control
-              print fmt("Si son emparejables TCP");
-              empa[cl]=c;
-              ## informacion_coincidencia(c, cl);
-              emparejados[cl]=c;
-            }else{
-              print fmt("No son emparejables TCP");
-            }
-            ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-            ## print fmt("Metido en tabla");
-            break;
-          }
+        cl=s;
+        ## informacion_coincidencia(c, cl);
+        ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+        umbral=emparejamiento(cl, c);
+        if(umbral>k){
+          ## Mostrar en el mensaje TCP es para control
+          print fmt("Si son emparejables TCP");
+          empa[cl]=c;
+          ## informacion_coincidencia(c, cl);
+          emparejados[cl]=c;
+        }else{
+          print fmt("No son emparejables TCP");
+        }
+        ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+        ## print fmt("Metido en tabla");
+        break;
+      }
 
     }
 
@@ -251,36 +241,37 @@ event udp_request(u: connection){
     local ul: connection;
 
   ## for que va recorriendo el set y haciendo comparaciones
-    for(s in conex){
+  for(s in conex){
 
-       if((s$id$orig_h == u$id$orig_h) && (s$id$resp_h == u$id$resp_h) && (s$id$orig_p == u$id$orig_p) && (s$id$resp_p == u$id$resp_p)){
-               if(s$uid==u$uid){
-                 next;
-               } else {
+     if((s$id$orig_h == u$id$orig_h) && (s$id$resp_h == u$id$resp_h) && (s$id$orig_p == u$id$orig_p) && (s$id$resp_p == u$id$resp_p)){
 
-               ul=s;
-               ## informacion_coincidencia(u, ul);
-               ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
-               umbral=emparejamiento(ul, u);
-               if(umbral>k){
-               ## Mostrar en el mensaje UDP es para control
-                print fmt("Si son emparejables UDP request");
-                empa[ul]=u;
-                ## informacion_coincidencia(u, ul);
-                emparejados[ul]=u;
-               }else{
-                 print fmt("No son emparejables UDP request");
-               }
-                ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
-                ## print fmt("Metido en tabla");
-                break;
-              }
+      if(s$uid==u$uid){
+        next;
+      } else {
 
-         }
+        ul=s;
+        ## informacion_coincidencia(u, ul);
+        ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+        umbral=emparejamiento(ul, u);
+        if(umbral>k){
+          ## Mostrar en el mensaje UDP es para control
+          print fmt("Si son emparejables UDP request");
+          empa[ul]=u;
+          ## informacion_coincidencia(u, ul);
+          emparejados[ul]=u;
+        }else{
+          print fmt("No son emparejables UDP request");
+        }
+        ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
+        ## print fmt("Metido en tabla");
+        break;
+      }
 
-       }
+    }
 
-       ## informacion_flujo(u);
+  }
+
+    ## informacion_flujo(u);
 
 }
 
@@ -297,33 +288,34 @@ event udp_reply(u: connection){
   for(s in conex){
 
      if((s$id$orig_h == u$id$orig_h) && (s$id$resp_h == u$id$resp_h) && (s$id$orig_p == u$id$orig_p) && (s$id$resp_p == u$id$resp_p)){
-             if(s$uid==u$uid){
-               next;
-             } else {
 
-             ul=s;
-             ## informacion_coincidencia(u, ul);
-             ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
-             umbral=emparejamiento(ul, u);
-             if(umbral>k){
-             ## Mostrar en el mensaje UDP es para control
-              print fmt("Si son emparejables UDP reply");
-              empa[ul]=u;
-              ## informacion_coincidencia(u, ul);
-              emparejados[ul]=u;
-             }else{
-               print fmt("No son emparejables UDP reply");
-             }
-              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
-              ## print fmt("Metido en tabla");
-              break;
-            }
+      if(s$uid==u$uid){
+        next;
+      } else {
 
-       }
+        ul=s;
+        ## informacion_coincidencia(u, ul);
+        ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+        umbral=emparejamiento(ul, u);
+        if(umbral>k){
+          ## Mostrar en el mensaje UDP es para control
+          print fmt("Si son emparejables UDP reply");
+          empa[ul]=u;
+          ## informacion_coincidencia(u, ul);
+          emparejados[ul]=u;
+        }else{
+          print fmt("No son emparejables UDP reply");
+        }
+        ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
+        ## print fmt("Metido en tabla");
+        break;
+      }
 
-     }
+    }
 
-     ## informacion_flujo(u);
+  }
+
+  ## informacion_flujo(u);
 
 }
 
@@ -352,32 +344,31 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
      ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
      local cl: connection;
 
-
      ## for que va recorriendo el set y haciendo comparaciones
      for(s in conex){
 
        if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
-               if(s$uid==c$uid){
-                 next;
-               } else {
+          if(s$uid==c$uid){
+            next;
+          } else {
 
-               cl=s;
-               ## informacion_coincidencia(c, cl);
-               ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
-               umbral=emparejamiento(cl, c);
-               if(umbral>k){
-                 ## Mostrar en el mensaje ICMP es para control
-                 print fmt("Si son emparejables ICMP request");
-                 empa[cl]=c;
-                 ## informacion_coincidencia(c, cl);
-                 emparejados[cl]=c;
-               }else{
-                 print fmt("No son emparejables ICMP request");
-               }
-               ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-               ## print fmt("Metido en tabla");
-               break;
-             }
+            cl=s;
+            ## informacion_coincidencia(c, cl);
+            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+            umbral=emparejamiento(cl, c);
+            if(umbral>k){
+              ## Mostrar en el mensaje ICMP es para control
+              print fmt("Si son emparejables ICMP request");
+              empa[cl]=c;
+              ## informacion_coincidencia(c, cl);
+              emparejados[cl]=c;
+            }else{
+              print fmt("No son emparejables ICMP request");
+            }
+              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              ## print fmt("Metido en tabla");
+              break;
+          }
 
        }
 
@@ -399,27 +390,27 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
      for(s in conex){
 
        if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
-               if(s$uid==c$uid){
-                 next;
-               } else {
+          if(s$uid==c$uid){
+            next;
+          } else {
 
-               cl=s;
-               ## informacion_coincidencia(c, cl);
-               ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
-               umbral=emparejamiento(cl, c);
-               if(umbral>k){
-                 ## Mostrar en el mensaje ICMP es para control
-                 print fmt("Si son emparejables ICMP reply");
-                 empa[cl]=c;
-                 ## informacion_coincidencia(c, cl);
-                 emparejados[cl]=c;
-               }else{
-                 print fmt("No son emparejables ICMP reply");
-               }
-               ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-               ## print fmt("Metido en tabla");
-               break;
-             }
+            cl=s;
+            ## informacion_coincidencia(c, cl);
+            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+            umbral=emparejamiento(cl, c);
+            if(umbral>k){
+              ## Mostrar en el mensaje ICMP es para control
+              print fmt("Si son emparejables ICMP reply");
+              empa[cl]=c;
+              ## informacion_coincidencia(c, cl);
+              emparejados[cl]=c;
+            }else{
+              print fmt("No son emparejables ICMP reply");
+            }
+              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              ## print fmt("Metido en tabla");
+              break;
+          }
 
        }
 

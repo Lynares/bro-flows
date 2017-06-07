@@ -50,9 +50,10 @@ function informacion_coincidencia(c: connection, p: connection){
 ## funcion para la comparacion de los flujos, c1 el flujo que esta en el set conex y c2 para el flujo que es candidato a guardarse en matchs
 function emparejamiento(c1: connection, c2: connection ):double {
   local resultado = 0.0; ## Lo ponemos a 0
-  if(c1$uid==c2$uid){
-    return resultado;
-  } else {
+## Aqui si los flujos tienen el mismo uid no se comparan, pues son el mismo, no se almacenan, solo se guardan flujos UDP 
+##  if(c1$uid==c2$uid){
+##    return resultado;
+##  } else {
   local Nip=1; ## Variable para saber cuantas conexiones tenemos
   local Po1: count; ## Puerto origen del primer flujo
   local Po2: count; ## Puerto origen del segundo flujo
@@ -62,18 +63,11 @@ function emparejamiento(c1: connection, c2: connection ):double {
   local k2 = 10; ## Variable fija
   local dt: double; ## Variable para la diferencia de los tiempos
 
-
+## Podemos saltarnos este bucle si inicializamos Nip a 1
   ## for (s in conex){
-
-  ##  if(s$id$orig_h == c2$id$orig_h){
-  ##    if(s$id$resp_h == c2$id$resp_h){
-  ##      if(s$id$orig_p == c2$id$orig_p){
-  ##        if(s$id$resp_p == c2$id$resp_p){
+  ##  if((s$id$orig_h == c2$id$orig_h) && (s$id$resp_h == c2$id$resp_h) && (s$id$orig_p == c2$id$orig_p) && (s$id$resp_p == c2$id$resp_p)){
   ##          Nip=Nip+1;
   ##          break;
-  ##        }
-  ##      }
-  ##    }
   ##  }
   ## }
 ## Este bucle lo puedo hacer sin ningun problema, pues en los eventos todavia no se ha dicho que se guarde en el set
@@ -101,8 +95,8 @@ function emparejamiento(c1: connection, c2: connection ):double {
   dt=(|c1$start_time| - |c2$start_time|);
   resultado=(Nip-1)+(1/((Po1-Po2)+k1))+(1/((Pd1-Pd2)+k1))+(1/(dt+k2));
   return resultado;
-}
 
+## }
 
 }
 
