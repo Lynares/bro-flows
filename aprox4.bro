@@ -39,7 +39,7 @@ function informacion_paquete(c: connection){
     print fmt("Informacion del flujonuevo IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
 }
 
-## Esta funcion es solo para depuracion, al final sera borrada
+
 ## Creo funcion auxiliar para ver la informacion del flujoque se coincide
 function informacion_coincidencia(c: connection, p: connection){
     print fmt("Informacion del primer flujo IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
@@ -50,7 +50,7 @@ function informacion_coincidencia(c: connection, p: connection){
 ## funcion para la comparacion de los flujos, c1 el flujo que esta en el set conex y c2 para el flujo que es candidato a guardarse en matchs
 function emparejamiento(c1: connection, c2: connection ):double {
   local resultado = 0.0; ## Lo ponemos a 0
-## Aqui si los flujos tienen el mismo uid no se comparan, pues son el mismo, no se almacenan, solo se guardan flujos UDP 
+## Aqui si los flujos tienen el mismo uid no se comparan, pues son el mismo, no se almacenan, solo se guardan flujos UDP
 ##  if(c1$uid==c2$uid){
 ##    return resultado;
 ##  } else {

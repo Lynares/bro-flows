@@ -28,7 +28,7 @@ global emparejados: table[connection] of connection;
 global umbral: double;
 
 ## Definimos el umbral, de manera global para hacer las comparaciones
-global k=0.01;
+global k=0.001;
 
 
 ## Creo funcion auxiliar para ver la informacion del flujo nuevo que se añade, no de todos los flujos todo el rato
@@ -67,9 +67,9 @@ function emparejamiento(c1: connection, c2: connection ):double {
   ##   }
   ## }
 
-  if(c1$uid==c2$uid){
-    print fmt("Son el mismo flujo, no se realiza incremento en Nip");
-  }else{
+##  if(c1$uid==c2$uid){
+##    print fmt("Son el mismo flujo, no se realiza incremento en Nip");
+##  }else{
 ## Este bucle lo puedo hacer sin ningun problema, pues en los eventos todavia no se ha dicho que se guarde en el set
   for (i in empa){
     if((i$id$orig_h == c2$id$orig_h) && (i$id$resp_h == c2$id$resp_h) && (i$id$orig_p == c2$id$orig_p) && (i$id$resp_p == c2$id$resp_p)){
@@ -104,7 +104,7 @@ function emparejamiento(c1: connection, c2: connection ):double {
   ## print fmt("Tiempo paquete 2: %s", t2);
   print fmt("Diferencia de tiempo: %s", dt);
   resultado=(Nip-1)+(1/((Po1-Po2)+k1))+(1/((Pd1-Pd2)+k1))+(1/(dt+k2));
- }
+## }
  return resultado;
 
 }
@@ -202,9 +202,9 @@ event connection_established(c: connection){
   for(s in conex){
 
     if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
-      if(s$uid==c$uid){
-        next;
-      } else {
+##      if(s$uid==c$uid){
+##        next;
+##      } else {
 
         cl=s;
         ## informacion_coincidencia(c, cl);
@@ -222,7 +222,7 @@ event connection_established(c: connection){
         ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
         ## print fmt("Metido en tabla");
         break;
-      }
+##      }
 
     }
 
@@ -245,9 +245,9 @@ event udp_request(u: connection){
 
      if((s$id$orig_h == u$id$orig_h) && (s$id$resp_h == u$id$resp_h) && (s$id$orig_p == u$id$orig_p) && (s$id$resp_p == u$id$resp_p)){
 
-      if(s$uid==u$uid){
-        next;
-      } else {
+##      if(s$uid==u$uid){
+##        next;
+##      } else {
 
         ul=s;
         ## informacion_coincidencia(u, ul);
@@ -265,7 +265,7 @@ event udp_request(u: connection){
         ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
         ## print fmt("Metido en tabla");
         break;
-      }
+##      }
 
     }
 
@@ -289,9 +289,9 @@ event udp_reply(u: connection){
 
      if((s$id$orig_h == u$id$orig_h) && (s$id$resp_h == u$id$resp_h) && (s$id$orig_p == u$id$orig_p) && (s$id$resp_p == u$id$resp_p)){
 
-      if(s$uid==u$uid){
-        next;
-      } else {
+##      if(s$uid==u$uid){
+##        next;
+##      } else {
 
         ul=s;
         ## informacion_coincidencia(u, ul);
@@ -309,7 +309,7 @@ event udp_reply(u: connection){
         ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
         ## print fmt("Metido en tabla");
         break;
-      }
+##      }
 
     }
 
@@ -348,9 +348,9 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
      for(s in conex){
 
        if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
-          if(s$uid==c$uid){
-            next;
-          } else {
+##          if(s$uid==c$uid){
+##            next;
+##          } else {
 
             cl=s;
             ## informacion_coincidencia(c, cl);
@@ -368,7 +368,7 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
               ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
               ## print fmt("Metido en tabla");
               break;
-          }
+##          }
 
        }
 
@@ -390,9 +390,9 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
      for(s in conex){
 
        if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
-          if(s$uid==c$uid){
-            next;
-          } else {
+##          if(s$uid==c$uid){
+##            next;
+##          } else {
 
             cl=s;
             ## informacion_coincidencia(c, cl);
@@ -410,7 +410,7 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
               ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
               ## print fmt("Metido en tabla");
               break;
-          }
+##          }
 
        }
 
