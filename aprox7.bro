@@ -463,6 +463,429 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
 }
 
 
+event icmp_time_exceeded(c: connection, icmp: icmp_conn, code: count, context: icmp_context){
+
+  ## Si el set esta vacio meto el primer flujo
+
+     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
+     local cl: connection;
+
+
+     ## for que va recorriendo el set y haciendo comparaciones
+     for(s in conex){
+
+       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+          if(s$uid==c$uid){
+            next;
+          } else {
+
+            cl=s;
+            ## informacion_coincidencia(c, cl);
+            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+            umbral=emparejamiento(cl, c);
+            if(umbral>k){
+              ## Mostrar en el mensaje ICMP es para control
+              print fmt("Si son emparejables ICMP time exceeded");
+              empa[cl]=c;
+              ## informacion_coincidencia(c, cl);
+              emparejados[cl]=c;
+            }else{
+              print fmt("No son emparejables ICMP time exceeded");
+            }
+              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              ## print fmt("Metido en tabla");
+              break;
+          }
+
+       }
+
+     }
+
+     ## informacion_flujo(c);
+
+}
+
+event icmp_error_message(c: connection, icmp: icmp_conn, code: count, context: icmp_context){
+
+  ## Si el set esta vacio meto el primer flujo
+
+     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
+     local cl: connection;
+
+
+     ## for que va recorriendo el set y haciendo comparaciones
+     for(s in conex){
+
+       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+          if(s$uid==c$uid){
+            next;
+          } else {
+
+            cl=s;
+            ## informacion_coincidencia(c, cl);
+            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+            umbral=emparejamiento(cl, c);
+            if(umbral>k){
+              ## Mostrar en el mensaje ICMP es para control
+              print fmt("Si son emparejables ICMP error message");
+              empa[cl]=c;
+              ## informacion_coincidencia(c, cl);
+              emparejados[cl]=c;
+            }else{
+              print fmt("No son emparejables ICMP error message");
+            }
+              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              ## print fmt("Metido en tabla");
+              break;
+          }
+
+       }
+
+     }
+
+     ## informacion_flujo(c);
+
+}
+
+event icmp_neighbor_advertisement(c: connection, icmp: icmp_conn, router: bool, solicited: bool, override: bool, tgt: addr, options: icmp6_nd_options){
+
+  ## Si el set esta vacio meto el primer flujo
+
+     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
+     local cl: connection;
+
+
+     ## for que va recorriendo el set y haciendo comparaciones
+     for(s in conex){
+
+       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+          if(s$uid==c$uid){
+            next;
+          } else {
+
+            cl=s;
+            ## informacion_coincidencia(c, cl);
+            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+            umbral=emparejamiento(cl, c);
+            if(umbral>k){
+              ## Mostrar en el mensaje ICMP es para control
+              print fmt("Si son emparejables ICMP neighbor advertisement");
+              empa[cl]=c;
+              ## informacion_coincidencia(c, cl);
+              emparejados[cl]=c;
+            }else{
+              print fmt("No son emparejables ICMP neighbor advertisement");
+            }
+              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              ## print fmt("Metido en tabla");
+              break;
+          }
+
+       }
+
+     }
+
+     ## informacion_flujo(c);
+
+}
+
+event icmp_neighbor_solicitation(c: connection, icmp: icmp_conn, tgt: addr, options: icmp6_nd_options){
+
+  ## Si el set esta vacio meto el primer flujo
+
+     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
+     local cl: connection;
+
+
+     ## for que va recorriendo el set y haciendo comparaciones
+     for(s in conex){
+
+       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+          if(s$uid==c$uid){
+            next;
+          } else {
+
+            cl=s;
+            ## informacion_coincidencia(c, cl);
+            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+            umbral=emparejamiento(cl, c);
+            if(umbral>k){
+              ## Mostrar en el mensaje ICMP es para control
+              print fmt("Si son emparejables ICMP neighbor solicitation");
+              empa[cl]=c;
+              ## informacion_coincidencia(c, cl);
+              emparejados[cl]=c;
+            }else{
+              print fmt("No son emparejables ICMP neighbor solicitation");
+            }
+              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              ## print fmt("Metido en tabla");
+              break;
+          }
+
+       }
+
+     }
+
+     ## informacion_flujo(c);
+
+}
+
+event icmp_redirect(c: connection, icmp: icmp_conn, tgt: addr, dest: addr, options: icmp6_nd_options){
+
+  ## Si el set esta vacio meto el primer flujo
+
+     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
+     local cl: connection;
+
+
+     ## for que va recorriendo el set y haciendo comparaciones
+     for(s in conex){
+
+       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+          if(s$uid==c$uid){
+            next;
+          } else {
+
+            cl=s;
+            ## informacion_coincidencia(c, cl);
+            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+            umbral=emparejamiento(cl, c);
+            if(umbral>k){
+              ## Mostrar en el mensaje ICMP es para control
+              print fmt("Si son emparejables ICMP redirect");
+              empa[cl]=c;
+              ## informacion_coincidencia(c, cl);
+              emparejados[cl]=c;
+            }else{
+              print fmt("No son emparejables ICMP redirect");
+            }
+              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              ## print fmt("Metido en tabla");
+              break;
+          }
+
+       }
+
+     }
+
+     ## informacion_flujo(c);
+
+}
+
+event icmp_router_advertisement (c: connection, icmp: icmp_conn, cur_hop_limit: count, managed: bool, other: bool, home_agent: bool, pref: count, proxy: bool, rsv: count, router_lifetime: interval, reachable_time: interval, retrans_timer: interval, options: icmp6_nd_options){
+
+  ## Si el set esta vacio meto el primer flujo
+
+     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
+     local cl: connection;
+
+
+     ## for que va recorriendo el set y haciendo comparaciones
+     for(s in conex){
+
+       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+          if(s$uid==c$uid){
+            next;
+          } else {
+
+            cl=s;
+            ## informacion_coincidencia(c, cl);
+            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+            umbral=emparejamiento(cl, c);
+            if(umbral>k){
+              ## Mostrar en el mensaje ICMP es para control
+              print fmt("Si son emparejables ICMP router advertisement");
+              empa[cl]=c;
+              ## informacion_coincidencia(c, cl);
+              emparejados[cl]=c;
+            }else{
+              print fmt("No son emparejables ICMP router advertisement");
+            }
+              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              ## print fmt("Metido en tabla");
+              break;
+          }
+
+       }
+
+     }
+
+     ## informacion_flujo(c);
+
+}
+
+event icmp_router_solicitation(c: connection, icmp: icmp_conn, options: icmp6_nd_options){
+
+  ## Si el set esta vacio meto el primer flujo
+
+     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
+     local cl: connection;
+
+
+     ## for que va recorriendo el set y haciendo comparaciones
+     for(s in conex){
+
+       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+          if(s$uid==c$uid){
+            next;
+          } else {
+
+            cl=s;
+            ## informacion_coincidencia(c, cl);
+            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+            umbral=emparejamiento(cl, c);
+            if(umbral>k){
+              ## Mostrar en el mensaje ICMP es para control
+              print fmt("Si son emparejables ICMP router solicitation");
+              empa[cl]=c;
+              ## informacion_coincidencia(c, cl);
+              emparejados[cl]=c;
+            }else{
+              print fmt("No son emparejables ICMP router solicitation");
+            }
+              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              ## print fmt("Metido en tabla");
+              break;
+          }
+
+       }
+
+     }
+
+     ## informacion_flujo(c);
+
+}
+
+event icmp_sent(c: connection, icmp: icmp_conn){
+
+  ## Si el set esta vacio meto el primer flujo
+
+     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
+     local cl: connection;
+
+
+     ## for que va recorriendo el set y haciendo comparaciones
+     for(s in conex){
+
+       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+          if(s$uid==c$uid){
+            next;
+          } else {
+
+            cl=s;
+            ## informacion_coincidencia(c, cl);
+            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+            umbral=emparejamiento(cl, c);
+            if(umbral>k){
+              ## Mostrar en el mensaje ICMP es para control
+              print fmt("Si son emparejables ICMP sent");
+              empa[cl]=c;
+              ## informacion_coincidencia(c, cl);
+              emparejados[cl]=c;
+            }else{
+              print fmt("No son emparejables ICMP sent");
+            }
+              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              ## print fmt("Metido en tabla");
+              break;
+          }
+
+       }
+
+     }
+
+     ## informacion_flujo(c);
+
+}
+
+event icmp_sent_payload(c: connection, icmp: icmp_conn, payload: string){
+
+  ## Si el set esta vacio meto el primer flujo
+
+     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
+     local cl: connection;
+
+
+     ## for que va recorriendo el set y haciendo comparaciones
+     for(s in conex){
+
+       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+          if(s$uid==c$uid){
+            next;
+          } else {
+
+            cl=s;
+            ## informacion_coincidencia(c, cl);
+            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+            umbral=emparejamiento(cl, c);
+            if(umbral>k){
+              ## Mostrar en el mensaje ICMP es para control
+              print fmt("Si son emparejables ICMP sent payload");
+              empa[cl]=c;
+              ## informacion_coincidencia(c, cl);
+              emparejados[cl]=c;
+            }else{
+              print fmt("No son emparejables ICMP sent payload");
+            }
+              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              ## print fmt("Metido en tabla");
+              break;
+          }
+
+       }
+
+     }
+
+     ## informacion_flujo(c);
+
+}
+
+event icmp_unreachable(c: connection, icmp: icmp_conn, code: count, context: icmp_context){
+
+  ## Si el set esta vacio meto el primer flujo
+
+     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
+     local cl: connection;
+
+
+     ## for que va recorriendo el set y haciendo comparaciones
+     for(s in conex){
+
+       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+          if(s$uid==c$uid){
+            next;
+          } else {
+
+            cl=s;
+            ## informacion_coincidencia(c, cl);
+            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+            umbral=emparejamiento(cl, c);
+            if(umbral>k){
+              ## Mostrar en el mensaje ICMP es para control
+              print fmt("Si son emparejables ICMP unreachable");
+              empa[cl]=c;
+              ## informacion_coincidencia(c, cl);
+              emparejados[cl]=c;
+            }else{
+              print fmt("No son emparejables ICMP unreachable");
+            }
+              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+              ## print fmt("Metido en tabla");
+              break;
+          }
+
+       }
+
+     }
+
+     ## informacion_flujo(c);
+
+}
+
+
+
+
 ## Evento que se lanza cuando se inicia BRO.
 event bro_init(){
 

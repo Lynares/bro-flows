@@ -1,4 +1,7 @@
 
+## En este archivo tenemos lo mismo que en el archivo aprox5.bro, solo que aquí
+## no se realiza la comprobación de que lso flujos tengan un uid distinto
+
 ## PRIMERA APROXIMACION con un solo set, simplemente almaceno los flujos en un set (PARA FLUJOS ACTIVOS) y cuando mueren los elimino
 ## El contenido del set si se ve alterado, pero el tamaño no, pues no es memoria dinamica
 ## Cambio de vector a set por las comparaciones, el tipo vector en bro no las soporta
@@ -231,6 +234,47 @@ event connection_established(c: connection){
   ## informacion_flujo(c);
 
 }
+
+## Este evento se lanza cuando una conexion TCP finaliza de forma normal
+event connection_finished(c: connection){
+
+  ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
+    local cl: connection;
+
+  ## for que va recorriendo el set y haciendo comparaciones
+  for(s in conex){
+
+    if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
+      if(s$uid==c$uid){
+        next;
+      } else {
+
+        cl=s;
+        ## informacion_coincidencia(c, cl);
+        ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
+        umbral=emparejamiento(cl, c);
+        if(umbral>k){
+          ## Mostrar en el mensaje TCP es para control
+          print fmt("Si son emparejables TCP");
+          empa[cl]=c;
+          ## informacion_coincidencia(c, cl);
+          emparejados[cl]=c;
+        }else{
+          print fmt("No son emparejables TCP");
+        }
+        ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
+        ## print fmt("Metido en tabla");
+        break;
+      }
+
+    }
+
+  }
+
+  ## informacion_flujo(c);
+
+}
+
 
 ## Para protocolo UDP usaremos otro evento
 ## Son funciones muy costosas por lo que se deberia de evitar su uso a menos que sea necesario
