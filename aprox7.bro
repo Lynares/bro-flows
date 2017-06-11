@@ -300,7 +300,7 @@ event udp_request(u: connection){
           print fmt("Si son emparejables UDP request");
           empa[ul]=u;
           ## informacion_coincidencia(u, ul);
-          emparejados[ul]=u;
+          emparejados[u]=ul;
         }else{
           print fmt("No son emparejables UDP request");
         }
@@ -344,7 +344,7 @@ event udp_reply(u: connection){
           print fmt("Si son emparejables UDP reply");
           empa[ul]=u;
           ## informacion_coincidencia(u, ul);
-          emparejados[ul]=u;
+          emparejados[u]=ul;
         }else{
           print fmt("No son emparejables UDP reply");
         }
