@@ -1,34 +1,15 @@
 
-## PRIMERA APROXIMACION con un solo set, simplemente almaceno los flujos en un set (PARA FLUJOS ACTIVOS) y cuando mueren los elimino
-## El contenido del set si se ve alterado, pero el tamaño no, pues no es memoria dinamica
-## Cambio de vector a set por las comparaciones, el tipo vector en bro no las soporta
-## global conex: set[connection];
-
-## Variable global para conocer el tamaño del set
-global tams=0;
-## Variable global para conocer el numero de flujos que hay en el archivo pcap
-global tam=0;
-## Variable para ver los flujos que eliminamos y comprobar si son los mismos que los que hemos añadido
-global elimi=0;
-
 ## Tabla para guardar los flujos que son emparejados
 ## global emparejados: table[connection] of connection;
 global collection: table[addr, addr, port, port] of vector of connection;
 
 ## El umbral: "Comparar la constante 'k', que es el umbral que fijaré con el resultado que devuelve la función,
 ## si es más grande el resultado que 'k' se puede decir que los dos flujos son iguales, si es más pequeño podemos decir que los dos flujos no son iguales"
-## resultado del umbral
+## resultado del umbral que calculamos
 global umbral: double;
 
 ## Definimos el umbral, de manera global para hacer las comparaciones
 global k=0.01;
-
-
-## Creo funcion auxiliar para ver la informacion del flujo nuevo que se añade, no de todos los flujos todo el rato
-function informacion_flujo(c: connection){
-    print fmt("Informacion del flujo nuevo IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-}
-
 
 ## Creo funcion auxiliar para ver la informacion del flujo que se coincide
 function informacion_coincidencia(c: connection, p: connection){
@@ -36,10 +17,16 @@ function informacion_coincidencia(c: connection, p: connection){
     print fmt("Informacion del flujo coincidente  IPo: %s , Po: %s , IPd: %s , Pd: %s ", p$id$orig_h, p$id$orig_p, p$id$resp_h, p$id$resp_p);
 }
 
-## funcion para la comparacion de los flujos, c1 el flujo que esta en el set conex y c2 para el flujo que es candidato a guardarse en empa
+## funcion para la comparacion de los flujos, c1 el flujo que esta el primero en el vector de la tabla y c2 para el flujo que es candidato a ser emparejado
 function emparejamiento(c1: connection, c2: connection ):double {
 
-  local Nip=1; ## Variable para saber cuantas conexiones tenemos
+  ## Añadimos variables para comprobar en la tabla, sin hacer bucle
+  local orig = c1$id$orig_h;
+  local dest = c1$id$resp_h;
+  local po = c1$id$orig_p;
+  local pd = c1$id$resp_p;
+
+  local Nip = |collection[orig,dest,po,pd]|; ## Variable para saber cuantas conexiones tenemos
   local Po1: count; ## Puerto origen del primer flujo
   local Po2: count; ## Puerto origen del segundo flujo
   local Pd1: count; ## Puerto destino del primer flujo
@@ -50,26 +37,7 @@ function emparejamiento(c1: connection, c2: connection ):double {
   local resultado = 0.0; ## Lo ponemos a 0
   print c1$uid;
   print c2$uid;
-## Podemos saltarnos este bucle si inicializamos Nip a 1
-  ## for (s in conex){
 
-  ##   if((s$id$orig_h == c1$id$orig_h) && (s$id$resp_h == c1$id$resp_h) && (s$id$orig_p == c1$id$orig_p) && (s$id$resp_p == c1$id$resp_p)){
-  ##           Nip=Nip+1;
-  ##           print fmt("Numero de Nip sin table: %d", Nip);
-  ##           break;
-  ##   }
-  ## }
-
-  if(c1$uid==c2$uid){
-    print fmt("Son el mismo flujo, no se realiza incremento en Nip");
-  }else{
-## Este bucle lo puedo hacer sin ningun problema, pues en los eventos todavia no se ha dicho que se guarde en el set
-  for (i in empa){
-    if((i$id$orig_h == c2$id$orig_h) && (i$id$resp_h == c2$id$resp_h) && (i$id$orig_p == c2$id$orig_p) && (i$id$resp_p == c2$id$resp_p)){
-            Nip=Nip+1;
-
-    }
-  }
   print fmt("Numero de Nip en table: %d", Nip);
   informacion_coincidencia(c1,c2);
   print fmt("Tiempo de inicio del flujo: %s", |c1$start_time|);
@@ -138,6 +106,8 @@ event connection_state_remove(c: connection){
   local dest = c$id$resp_h;
   local po = c$id$orig_p;
   local pd = c$id$resp_p;
+
+  
 
   if( [orig,dest,po,pd] in collection ){
     ## Si existe en la coleccion
