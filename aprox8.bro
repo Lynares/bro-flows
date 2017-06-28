@@ -106,31 +106,26 @@ event connection_state_remove(c: connection){
   local dest = c$id$resp_h;
   local po = c$id$orig_p;
   local pd = c$id$resp_p;
+  ## Copia auxiliar para eliminar el primer elemento del vector
+  local aux = collection[orig,dest,po,pd];
+  local v: vector of connection;
 
-  
+  for (i in aux){
+    if (i == 0){
+      next;
+    } else {
+      v[|v|]=aux[i];
+    }
+  }
 
   if( [orig,dest,po,pd] in collection ){
     ## Si existe en la coleccion
-
-
-
-
-  } else {
-    ## Si no existe en la coleccion
-
+    if (|aux| > 1){
+      collection[orig,dest,po,pd][|collection[orig,dest,po,pd]|] = v;
+    } else {
+      collection[orig,dest,po,pd][|collection[orig,dest,po,pd]|] = vector();
+    }
   }
-
-    ## Aqui si tenemos otro flujo igual al que vamos a eliminar lo metemos en conex para que ocupe el lugar del que vamos a borrar
-    ## Con la variable booleana controlamos el decrecimiento del set
-    ##if (esta==T){
-    ##  delete conex[c];
-    ##  add conex[cl];
-    ##  delete empa[cl];
-      ## print fmt("Hemos borrado");
-      ## print empa[cl];
-    ##} else {
-    ##  delete conex[c];
-    ##}
 
 }
 
