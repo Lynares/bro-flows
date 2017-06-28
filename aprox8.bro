@@ -2,7 +2,7 @@
 ## PRIMERA APROXIMACION con un solo set, simplemente almaceno los flujos en un set (PARA FLUJOS ACTIVOS) y cuando mueren los elimino
 ## El contenido del set si se ve alterado, pero el tamaño no, pues no es memoria dinamica
 ## Cambio de vector a set por las comparaciones, el tipo vector en bro no las soporta
-global conex: set[connection];
+## global conex: set[connection];
 
 ## Variable global para conocer el tamaño del set
 global tams=0;
@@ -11,17 +11,10 @@ global tam=0;
 ## Variable para ver los flujos que eliminamos y comprobar si son los mismos que los que hemos añadido
 global elimi=0;
 
-## SEGUNDA APROXIMACION... FICHERO aprox2.bro CREO SET COMPLEMENTARIO PARA ALMACENAR LOS QUE YA TENGO ALMACENADOS EN ALGUN MOMENTO
-
-## TERCERA APROXIMACION... CREO TABLE PARA ALMACENAR EN EL INDICE LA INFORMACION DEL PRIMER SET Y METERLE LA INFORMACION DEL SEGUNDO CUANDO CASEN.
-## table para almacenar los flujos que coinciden con los que ya tenemos en conex... (PARA FLUJOS EMPAREJADOS)
-## Incluidos TCP, UDP e ICMP
-global empa: table[connection] of connection;
-
 ## Tabla para guardar los flujos que son emparejados
-global emparejados: table[connection] of connection;
+## global emparejados: table[connection] of connection;
+global collection: table[addr, addr, port, port] of vector of connection;
 
-## CUARTA APROXIMACION... Crear una funcion en la cual se analice mediante la funcion requerida si los flujos se pueden emparejar o no...
 ## El umbral: "Comparar la constante 'k', que es el umbral que fijaré con el resultado que devuelve la función,
 ## si es más grande el resultado que 'k' se puede decir que los dos flujos son iguales, si es más pequeño podemos decir que los dos flujos no son iguales"
 ## resultado del umbral
@@ -109,40 +102,26 @@ function emparejamiento(c1: connection, c2: connection ):double {
 
 }
 
-## Cada vez que entra un nuevo flujo lo comparo con lo que ya tengo en el set
-## Este evento se lanza con cada nueva conexion de un flujo que no sea conocido
+## Cada vez que entra un nuevo flujo compruebo que si esta en la tabla
+## Este evento se lanza con cada nueva conexion de un flujo que no sea conocido, por lo tanto se supone que nunca entrara en el else
 ## Generated for every new connection. This event is raised with the first packet of a previously unknown connection. Bro uses a flow-based definition of “connection” here that includes not only TCP sessions but also UDP and ICMP flows.
 event new_connection(c: connection){
+  local orig = c$id$orig_h;
+  local dest = c$id$resp_h;
+  local po = c$id$orig_p;
+  local pd = c$id$resp_p;
 
-## Si el set esta vacio meto el primer flujo
-   if(tams==0){
-    add conex[c];
-   }
-## Sumamos uno al tamaño del set
-    tam=tam+1;
+  if( [orig,dest,po,pd] !in collection ){
 
-## Variable booleana para controlar el acceso al set
-     local met = F;
+    ## Si no estan los valores clave del flujo lo creamos
+    collection[orig,dest,po,pd]=vector(c);
 
-## for que va recorriendo el set y haciendo comparaciones
-     for(s in conex){
-## Copiamos en la variable local para comparar con todo lo que hay en el set
-       if((s$id$orig_h != c$id$orig_h) && (s$id$resp_h != c$id$resp_h) && (s$id$orig_p != c$id$orig_p) && (s$id$resp_p != c$id$resp_p)){
-               ## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
-               met=T;
-       }
+  } else {
 
-     }
-    ## Con la variable booleana controlamos el crecimiento del set
-     if (met==T){
-       add conex[c];
-       tams=tams+1;
-       ## print fmt("Meto un flujo nuevo por la conexion de origen distinta");
-     }
-     met=F;
-    ## print fmt("Numero de flujos al momento: %d", tam);
-    ## print fmt("Tamanio del set: %d", tams);
-    ## informacion_flujo(c);
+    ## Si ya esta, lo añadimos
+    collection[orig,dest,po,pd][|collection[orig,dest,po,pd]|] = c;
+
+  }
 
 }
 
@@ -155,80 +134,69 @@ event new_connection(c: connection){
 ## This event is generated not only for TCP sessions but also for UDP and ICMP flows.
 event connection_state_remove(c: connection){
 
-## Creo un connection local para poder pasarlo de empa a conex
-   local cl: connection;
-## Variable booleana para controlar el acceso al set
-   local esta = F;
+  local orig = c$id$orig_h;
+  local dest = c$id$resp_h;
+  local po = c$id$orig_p;
+  local pd = c$id$resp_p;
 
-## for que va recorriendo el set y haciendo comparaciones
-    for(s in empa){
-      if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
-## Si se dan todas las condiciones la variable booleana de control de acceso al set se cambia a true, T
-              esta=T;
-## Al existir otro flujo lo copiamos en cl
-              cl=s;
-              break;
-      }
-    }
+  if( [orig,dest,po,pd] in collection ){
+    ## Si existe en la coleccion
 
-    ## Aqui si tenemos otro flujo igual al que vamos a eliminar lo metemos en conex para que ocupe el lugar del que vamos a borrar
-    ## Con la variable booleana controlamos el decrecimiento del set
-    if (esta==T){
-      delete conex[c];
-      add conex[cl];
-      delete empa[cl];
-      ## print fmt("Hemos borrado");
-      ## print empa[cl];
-    } else {
-      delete conex[c];
-    }
-    elimi=elimi+1;
-    ## Quitamos uno al tamaño del set
-    tams=tams-1;
-    esta=F;
-    ##  print fmt("Tamanio del set: %d", tams);
-    ##  informacion_flujo(c);
 
-}
 
-## Cuando la conexion se establece vemos si hay flujos que emparejar y los metemos en empa
-## Solo sirve para conexiones TCP, se genera cuando ve un SYN-ACK que responde al handshake de un TCP
-event connection_established(c: connection){
 
-  ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
-    local cl: connection;
-
-  ## for que va recorriendo el set y haciendo comparaciones
-  for(s in conex){
-
-    if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
-      if(s$uid==c$uid){
-        next;
-      } else {
-
-        cl=s;
-        ## informacion_coincidencia(c, cl);
-        ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
-        umbral=emparejamiento(cl, c);
-        if(umbral>k){
-          ## Mostrar en el mensaje TCP es para control
-          print fmt("Si son emparejables TCP");
-          empa[cl]=c;
-          ## informacion_coincidencia(c, cl);
-          emparejados[cl]=c;
-        }else{
-          print fmt("No son emparejables TCP");
-        }
-        ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-        ## print fmt("Metido en tabla");
-        break;
-      }
-
-    }
+  } else {
+    ## Si no existe en la coleccion
 
   }
 
-  ## informacion_flujo(c);
+    ## Aqui si tenemos otro flujo igual al que vamos a eliminar lo metemos en conex para que ocupe el lugar del que vamos a borrar
+    ## Con la variable booleana controlamos el decrecimiento del set
+    ##if (esta==T){
+    ##  delete conex[c];
+    ##  add conex[cl];
+    ##  delete empa[cl];
+      ## print fmt("Hemos borrado");
+      ## print empa[cl];
+    ##} else {
+    ##  delete conex[c];
+    ##}
+
+}
+
+## Cuando la conexion se establece vemos si hay flujos que emparejar y los metemos en la tabla
+## Solo sirve para conexiones TCP, se genera cuando ve un SYN-ACK que responde al handshake de un TCP
+event connection_established(c: connection){
+
+  local orig = c$id$orig_h;
+  local dest = c$id$resp_h;
+  local po = c$id$orig_p;
+  local pd = c$id$resp_p;
+
+  local cl = collection[orig,dest,po,pd][0];
+
+  if( [orig,dest,po,pd] in collection ){
+    ## Si existe en la coleccion
+    if(cl$uid == c$uid){
+      ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
+      next;
+
+    } else {
+      ## Si no tienen el mismo uid pasamos a comprobar
+      umbral=emparejamiento(cl,c);
+
+      if(umbral>k){
+        ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
+        print fmt("Si son emparejables TCP"); ## Mostramos TCP para saber en que evento se han calculado
+        collection[orig,dest,po,pd][|collection[orig,dest,po,pd]|] = c;
+
+      } else{
+        ## Si el umbral calculado es menor que el umbral de comparacion no lo añadimos
+        print fmt("No son emparejables TCP");
+
+      }
+    }
+  }
 
 }
 
@@ -236,40 +204,35 @@ event connection_established(c: connection){
 ## Este evento se lanza cuando una conexion TCP finaliza de forma normal
 event connection_finished(c: connection){
 
-  ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
-    local cl: connection;
+  local orig = c$id$orig_h;
+  local dest = c$id$resp_h;
+  local po = c$id$orig_p;
+  local pd = c$id$resp_p;
 
-  ## for que va recorriendo el set y haciendo comparaciones
-  for(s in conex){
+  local cl = collection[orig,dest,po,pd][0];
 
-    if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
-      if(s$uid==c$uid){
-        next;
-      } else {
+  if( [orig,dest,po,pd] in collection ){
+    ## Si existe en la coleccion
+    if(cl$uid == c$uid){
+      ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
+      next;
 
-        cl=s;
-        ## informacion_coincidencia(c, cl);
-        ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
-        umbral=emparejamiento(cl, c);
-        if(umbral>k){
-          ## Mostrar en el mensaje TCP es para control
-          print fmt("Si son emparejables TCP");
-          empa[cl]=c;
-          ## informacion_coincidencia(c, cl);
-          emparejados[cl]=c;
-        }else{
-          print fmt("No son emparejables TCP");
-        }
-        ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-        ## print fmt("Metido en tabla");
-        break;
+    } else {
+      ## Si no tienen el mismo uid pasamos a comprobar
+      umbral=emparejamiento(cl,c);
+
+      if(umbral>k){
+        ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
+        print fmt("Si son emparejables TCP"); ## Mostramos TCP para saber en que evento se han calculado
+        collection[orig,dest,po,pd][|collection[orig,dest,po,pd]|] = c;
+
+      } else{
+        ## Si el umbral calculado es menor que el umbral de comparacion no lo añadimos
+        print fmt("No son emparejables TCP");
+
       }
-
     }
-
   }
-
-  ## informacion_flujo(c);
 
 }
 
@@ -279,41 +242,35 @@ event connection_finished(c: connection){
 ## udp_request se lanza por cada flujo UDP del flujo que es enviado por el origen.
 event udp_request(u: connection){
 
-  ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
-    local ul: connection;
+  local orig = u$id$orig_h;
+  local dest = u$id$resp_h;
+  local po = u$id$orig_p;
+  local pd = u$id$resp_p;
 
-  ## for que va recorriendo el set y haciendo comparaciones
-  for(s in conex){
+  local ul = collection[orig,dest,po,pd][0];
 
-     if((s$id$orig_h == u$id$orig_h) && (s$id$resp_h == u$id$resp_h) && (s$id$orig_p == u$id$orig_p) && (s$id$resp_p == u$id$resp_p)){
+  if( [orig,dest,po,pd] in collection ){
+    ## Si existe en la coleccion
+    if(ul$uid == u$uid){
+      ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
+      next;
 
-      if(s$uid==u$uid){
-        next;
-      } else {
+    } else {
+      ## Si no tienen el mismo uid pasamos a comprobar
+      umbral=emparejamiento(ul,u);
 
-        ul=s;
-        ## informacion_coincidencia(u, ul);
-        ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
-        umbral=emparejamiento(ul, u);
-        if(umbral>k){
-          ## Mostrar en el mensaje UDP es para control
-          print fmt("Si son emparejables UDP request");
-          empa[ul]=u;
-          ## informacion_coincidencia(u, ul);
-          emparejados[u]=ul;
-        }else{
-          print fmt("No son emparejables UDP request");
-        }
-        ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
-        ## print fmt("Metido en tabla");
-        break;
+      if(umbral>k){
+        ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
+        print fmt("Si son emparejables UDP request"); ## Mostramos UDP para saber en que evento se han calculado
+        collection[orig,dest,po,pd][|collection[orig,dest,po,pd]|] = u;
+
+      } else{
+        ## Si el umbral calculado es menor que el umbral de comparacion no lo añadimos
+        print fmt("No son emparejables UDP request");
+
       }
-
     }
-
   }
-
-    ## informacion_flujo(u);
 
 }
 
@@ -321,43 +278,35 @@ event udp_request(u: connection){
 ## cabecera del evento event udp_reply(u: connection)
 event udp_reply(u: connection){
 
-  ## Si el set esta vacio meto el primer flujo
+  local orig = u$id$orig_h;
+  local dest = u$id$resp_h;
+  local po = u$id$orig_p;
+  local pd = u$id$resp_p;
 
-  ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
-    local ul: connection;
+  local ul = collection[orig,dest,po,pd][0];
 
-  ## for que va recorriendo el set y haciendo comparaciones
-  for(s in conex){
+  if( [orig,dest,po,pd] in collection ){
+    ## Si existe en la coleccion
+    if(ul$uid == u$uid){
+      ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
+      next;
 
-     if((s$id$orig_h == u$id$orig_h) && (s$id$resp_h == u$id$resp_h) && (s$id$orig_p == u$id$orig_p) && (s$id$resp_p == u$id$resp_p)){
+    } else {
+      ## Si no tienen el mismo uid pasamos a comprobar
+      umbral=emparejamiento(ul,u);
 
-      if(s$uid==u$uid){
-        next;
-      } else {
+      if(umbral>k){
+        ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
+        print fmt("Si son emparejables UDP reply"); ## Mostramos UDP para saber en que evento se han calculado
+        collection[orig,dest,po,pd][|collection[orig,dest,po,pd]|] = u;
 
-        ul=s;
-        ## informacion_coincidencia(u, ul);
-        ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
-        umbral=emparejamiento(ul, u);
-        if(umbral>k){
-          ## Mostrar en el mensaje UDP es para control
-          print fmt("Si son emparejables UDP reply");
-          empa[ul]=u;
-          ## informacion_coincidencia(u, ul);
-          emparejados[u]=ul;
-        }else{
-          print fmt("No son emparejables UDP reply");
-        }
-        ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", ul$id$orig_h, ul$id$orig_p, ul$id$resp_h, ul$id$resp_p, u$id$orig_h, u$id$orig_p, u$id$resp_h, u$id$resp_p);
-        ## print fmt("Metido en tabla");
-        break;
+      } else{
+        ## Si el umbral calculado es menor que el umbral de comparacion no lo añadimos
+        print fmt("No son emparejables UDP reply");
+
       }
-
     }
-
   }
-
-  ## informacion_flujo(u);
 
 }
 
@@ -382,128 +331,70 @@ event udp_reply(u: connection){
 ## payload:	The message-specific data of the packet payload, i.e., everything after the first 8 bytes of the ICMP header.
 
 event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, payload: string){
+  local orig = c$id$orig_h;
+  local dest = c$id$resp_h;
+  local po = c$id$orig_p;
+  local pd = c$id$resp_p;
 
-     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
-     local cl: connection;
+  local cl = collection[orig,dest,po,pd][0];
 
-     ## for que va recorriendo el set y haciendo comparaciones
-     for(s in conex){
+  if( [orig,dest,po,pd] in collection ){
+    ## Si existe en la coleccion
+    if(cl$uid == c$uid){
+      ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
+      next;
 
-       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
-          if(s$uid==c$uid){
-            next;
-          } else {
+    } else {
+      ## Si no tienen el mismo uid pasamos a comprobar
+      umbral=emparejamiento(cl,c);
 
-            cl=s;
-            ## informacion_coincidencia(c, cl);
-            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
-            umbral=emparejamiento(cl, c);
-            if(umbral>k){
-              ## Mostrar en el mensaje ICMP es para control
-              print fmt("Si son emparejables ICMP request");
-              empa[cl]=c;
-              ## informacion_coincidencia(c, cl);
-              emparejados[cl]=c;
-            }else{
-              print fmt("No son emparejables ICMP request");
-            }
-              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-              ## print fmt("Metido en tabla");
-              break;
-          }
+      if(umbral>k){
+        ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
+        print fmt("Si son emparejables ICMP request"); ## Mostramos ICMP para saber en que evento se han calculado
+        collection[orig,dest,po,pd][|collection[orig,dest,po,pd]|] = c;
 
-       }
+      } else{
+        ## Si el umbral calculado es menor que el umbral de comparacion no lo añadimos
+        print fmt("No son emparejables ICMP request");
 
-     }
-
-     ## informacion_flujo(c);
+      }
+    }
+  }
 
 }
 
 event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, payload: string){
+  local orig = c$id$orig_h;
+  local dest = c$id$resp_h;
+  local po = c$id$orig_p;
+  local pd = c$id$resp_p;
 
-  ## Si el set esta vacio meto el primer flujo
+  local cl = collection[orig,dest,po,pd][0];
 
-     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
-     local cl: connection;
+  if( [orig,dest,po,pd] in collection ){
+    ## Si existe en la coleccion
+    if(cl$uid == c$uid){
+      ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
+      next;
 
+    } else {
+      ## Si no tienen el mismo uid pasamos a comprobar
+      umbral=emparejamiento(cl,c);
 
-     ## for que va recorriendo el set y haciendo comparaciones
-     for(s in conex){
+      if(umbral>k){
+        ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
+        print fmt("Si son emparejables ICMP reply"); ## Mostramos ICMP para saber en que evento se han calculado
+        collection[orig,dest,po,pd][|collection[orig,dest,po,pd]|] = c;
 
-       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
-          if(s$uid==c$uid){
-            next;
-          } else {
+      } else{
+        ## Si el umbral calculado es menor que el umbral de comparacion no lo añadimos
+        print fmt("No son emparejables ICMP reply");
 
-            cl=s;
-            ## informacion_coincidencia(c, cl);
-            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
-            umbral=emparejamiento(cl, c);
-            if(umbral>k){
-              ## Mostrar en el mensaje ICMP es para control
-              print fmt("Si son emparejables ICMP reply");
-              empa[cl]=c;
-              ## informacion_coincidencia(c, cl);
-              emparejados[cl]=c;
-            }else{
-              print fmt("No son emparejables ICMP reply");
-            }
-              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-              ## print fmt("Metido en tabla");
-              break;
-          }
-
-       }
-
-     }
-
-     ## informacion_flujo(c);
+      }
+    }
+  }
 
 }
-
-event icmp_sent(c: connection, icmp: icmp_conn){
-
-  ## Si el set esta vacio meto el primer flujo
-
-     ## Creo un connection local para poder hacer comparaciones con el set y poder descartar flujos que no coinciden
-     local cl: connection;
-
-
-     ## for que va recorriendo el set y haciendo comparaciones
-     for(s in conex){
-
-       if((s$id$orig_h == c$id$orig_h) && (s$id$resp_h == c$id$resp_h) && (s$id$orig_p == c$id$orig_p) && (s$id$resp_p == c$id$resp_p)){
-          if(s$uid==c$uid){
-            next;
-          } else {
-
-            cl=s;
-            ## informacion_coincidencia(c, cl);
-            ## Metemos la informacion aquí pues los datos se falsearán si los metemos en la tabla después
-            umbral=emparejamiento(cl, c);
-            if(umbral>k){
-              ## Mostrar en el mensaje ICMP es para control
-              print fmt("Si son emparejables ICMP sent");
-              empa[cl]=c;
-              ## informacion_coincidencia(c, cl);
-              emparejados[cl]=c;
-            }else{
-              print fmt("No son emparejables ICMP sent");
-            }
-              ## print fmt("De la tabla en %s con %s con %s con %s añadimos: %s con %s con %s con %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p, c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
-              ## print fmt("Metido en tabla");
-              break;
-          }
-
-       }
-
-     }
-
-     ## informacion_flujo(c);
-
-}
-
 
 ## Evento que se lanza cuando se inicia BRO.
 event bro_init(){
