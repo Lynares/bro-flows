@@ -106,33 +106,27 @@ event connection_state_remove(c: connection){
   local dest = c$id$resp_h;
   local po = c$id$orig_p;
   local pd = c$id$resp_p;
-  ## Copia auxiliar para eliminar el primer elemento del vector
-  local aux = collection[orig,dest,po,pd];
-  ##local v: table[addr,addr,port,port] of vector of connection;
-  local v = vector();
+  local coleccion = collection[orig,dest,po,pd];
+  local tabla_aux: table[addr, addr, port, port] of vector of connection;
+  local primera_conexion = coleccion[0];
 
-  local primera_conexion = collection[orig,dest,po,pd][0]$uid;
-  ## collection[orig,dest,po,pd]=vector();
-  for(i in aux){
-    if(aux[i]$uid==primera_conexion){
+  if([orig,dest,po,pd] !in tabla_aux){
+    tabla_aux[orig,dest,po,pd]=vector();
+  }
+
+  local tama = |coleccion|;
+  local i=0;
+  for(j in coleccion){
+    if(coleccion[j]==primera_conexion){
       next;
       print fmt("Saltamos primera conexion");
-    }else{
-      v[i]=aux[i];
-
-      print fmt("Copiamos");
+    } else {
+      tabla_aux[orig,dest,po,pd][|tabla_aux[orig,dest,po,pd]|]=coleccion[j];
+      print fmt("Una copia....................");
     }
   }
-  print fmt("Fin copia en v");
-
-  for(j in v){
-    collection[orig,dest,po,pd][j]=v[j];
-  }
-
-  ##collection[orig,dest,po,pd]=vector();
-  ##local copi = v[orig,dest,po,pd];
-  ##collection[orig,dest,po,pd]=copi;
-  print fmt("Lo hemos borrado y copiado aiuto!");
+  collection[orig,dest,po,pd]=tabla_aux[orig,dest,po,pd];
+  print fmt("Terminamos copia...");
 
 }
 
@@ -444,15 +438,15 @@ event bro_init(){
 ## Evento que se genera cuando BRO va a tenerminar, menos si se realiza mediante una llamada a la funcion exit (ver documentacion)
 event bro_done(){
 
-  local cl: connection;
+  ##local cl: connection;
 
   ## Mostramos lo que tenemos en la tabla de emparejados
-   for([o, d, s, f] in collection_added){
-     cl = collection_added[o,d,s,f][0];
-     print fmt("Tenemos: %s en %s a %s en %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p);
-     print fmt(" de %s en %s a %s en %s", collection_added[o,d,s,f][|collection_added[o,d,s,f]|]$id$orig_h, collection_added[o,d,s,f][|collection_added[o,d,s,f]|]$id$orig_p, collection_added[o,d,s,f][|collection_added[o,d,s,f]|]$id$resp_h, collection_added[o,d,s,f][|collection_added[o,d,s,f]|]$id$resp_p);
+   ##for([o, d, s, f] in collection_added){
+     ##cl = collection_added[o,d,s,f][0];
+     ##print fmt("Tenemos: %s en %s a %s en %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p);
+     ##print fmt(" de %s en %s a %s en %s", collection_added[o,d,s,f][|collection_added[o,d,s,f]|]$id$orig_h, collection_added[o,d,s,f][|collection_added[o,d,s,f]|]$id$orig_p, collection_added[o,d,s,f][|collection_added[o,d,s,f]|]$id$resp_h, collection_added[o,d,s,f][|collection_added[o,d,s,f]|]$id$resp_p);
   ##  informacion_coincidencia(cl, collection[o,d,s,f][|collection[o,d,s,f]|]);
-  }
+  ##}
 
   ## print fmt("Total de flujos: %d", tam);
   print fmt("Hora de finalizacion: %s", current_time());
