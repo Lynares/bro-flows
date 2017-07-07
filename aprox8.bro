@@ -100,35 +100,35 @@ event new_connection(c: connection){
 ## once for every connection when it is about to delete the internal state. As such, the event is well-suited for
 ## script-level cleanup that needs to be performed for every connection.
 ## This event is generated not only for TCP sessions but also for UDP and ICMP flows.
-event connection_state_remove(c: connection){
+## event connection_state_remove(c: connection){
 
-  local orig = c$id$orig_h;
-  local dest = c$id$resp_h;
-  local po = c$id$orig_p;
-  local pd = c$id$resp_p;
-  local coleccion = collection[orig,dest,po,pd];
-  local tabla_aux: table[addr, addr, port, port] of vector of connection;
-  local primera_conexion = coleccion[0];
+##   local orig = c$id$orig_h;
+##   local dest = c$id$resp_h;
+##   local po = c$id$orig_p;
+##   local pd = c$id$resp_p;
+##   local coleccion = collection[orig,dest,po,pd];
+##   local tabla_aux: table[addr, addr, port, port] of vector of connection;
+##   local primera_conexion = coleccion[0];
 
-  if([orig,dest,po,pd] !in tabla_aux){
-    tabla_aux[orig,dest,po,pd]=vector();
-  }
+##   if([orig,dest,po,pd] !in tabla_aux){
+##     tabla_aux[orig,dest,po,pd]=vector();
+##   }
 
-  local tama = |coleccion|;
-  local i=0;
-  for(j in coleccion){
-    if(coleccion[j]==primera_conexion){
-      next;
-      print fmt("Saltamos primera conexion");
-    } else {
-      tabla_aux[orig,dest,po,pd][|tabla_aux[orig,dest,po,pd]|]=coleccion[j];
-      print fmt("Una copia....................");
-    }
-  }
-  collection[orig,dest,po,pd]=tabla_aux[orig,dest,po,pd];
-  print fmt("Terminamos copia...");
+##   local tama = |coleccion|;
+##   local i=0;
+##   for(j in coleccion){
+##     if(coleccion[j]==primera_conexion){
+##       next;
+##       print fmt("Saltamos primera conexion");
+##     } else {
+##       tabla_aux[orig,dest,po,pd][|tabla_aux[orig,dest,po,pd]|]=coleccion[j];
+##       print fmt("Una copia....................");
+##     }
+##   }
+##   collection[orig,dest,po,pd]=tabla_aux[orig,dest,po,pd];
+##   print fmt("Terminamos copia...");
 
-}
+## }
 
 ## Cuando la conexion se establece vemos si hay flujos que emparejar y los metemos en la tabla
 ## Solo sirve para conexiones TCP, se genera cuando ve un SYN-ACK que responde al handshake de un TCP
