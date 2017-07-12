@@ -1,6 +1,6 @@
 
 ## Tabla para guardar los flujos que son emparejados
-global collection: table[addr, addr, port, port] of vector of connection;
+global collection: table[addr, addr, port, port] of vector of connection &synchronized;
 global collection_added: table[addr, addr, port, port] of vector of connection;
 
 ## El umbral: "Comparar la constante 'k', que es el umbral que fijaré con el resultado que devuelve la función,
@@ -9,12 +9,16 @@ global collection_added: table[addr, addr, port, port] of vector of connection;
 global umbral: double;
 
 ## Definimos el umbral, de manera global para hacer las comparaciones
-global k=0.01;
+global k=10;
 
 ## Creo funcion auxiliar para ver la informacion del flujo que se coincide
 function informacion_coincidencia(c: connection, p: connection){
     print fmt("Informacion del primer flujo  IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
     print fmt("Informacion del flujo coincidente  IPo: %s , Po: %s , IPd: %s , Pd: %s ", p$id$orig_h, p$id$orig_p, p$id$resp_h, p$id$resp_p);
+}
+
+function informacion_flujo(c: connection){
+    print fmt("Informacion del flujo añadido IPo: %s , Po: %s , IPd: %s , Pd: %s, uid: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p, c$uid);
 }
 
 ## funcion para la comparacion de los flujos, c1 el flujo que esta el primero en el vector de la tabla y c2 para el flujo que es candidato a ser emparejado
@@ -83,11 +87,13 @@ event new_connection(c: connection){
 
     ## Si no estan los valores clave del flujo lo creamos
     collection[orig,dest,po,pd]=vector(c);
+    informacion_flujo(c);
     print fmt("Añadimos una nueva conexion");
   } else {
 
     ## Si ya esta, lo añadimos
     collection[orig,dest,po,pd][|collection[orig,dest,po,pd]|] = c;
+    informacion_flujo(c);
     print fmt("Ya esta y la añadimos");
   }
 
@@ -100,35 +106,30 @@ event new_connection(c: connection){
 ## once for every connection when it is about to delete the internal state. As such, the event is well-suited for
 ## script-level cleanup that needs to be performed for every connection.
 ## This event is generated not only for TCP sessions but also for UDP and ICMP flows.
-## event connection_state_remove(c: connection){
+event connection_state_remove(c: connection){
 
-##   local orig = c$id$orig_h;
-##   local dest = c$id$resp_h;
-##   local po = c$id$orig_p;
-##   local pd = c$id$resp_p;
-##   local coleccion = collection[orig,dest,po,pd];
-##   local tabla_aux: table[addr, addr, port, port] of vector of connection;
-##   local primera_conexion = coleccion[0];
+  local orig = c$id$orig_h;
+  local dest = c$id$resp_h;
+  local po = c$id$orig_p;
+  local pd = c$id$resp_p;
+  local coleccion = collection[orig,dest,po,pd];
+  local tama=|coleccion|;
 
-##   if([orig,dest,po,pd] !in tabla_aux){
-##     tabla_aux[orig,dest,po,pd]=vector();
-##   }
 
-##   local tama = |coleccion|;
-##   local i=0;
-##   for(j in coleccion){
-##     if(coleccion[j]==primera_conexion){
-##       next;
-##       print fmt("Saltamos primera conexion");
-##     } else {
-##       tabla_aux[orig,dest,po,pd][|tabla_aux[orig,dest,po,pd]|]=coleccion[j];
-##       print fmt("Una copia....................");
-##     }
-##   }
-##   collection[orig,dest,po,pd]=tabla_aux[orig,dest,po,pd];
-##   print fmt("Terminamos copia...");
+  for(j in coleccion){
+    if(j+1 >= tama){
+      if(tama==1){
+        collection[orig,dest,po,pd]=vector();
+      }
+      break;
+    } else {
+      collection[orig,dest,po,pd][j]=coleccion[j+1];
+    }
+  }
 
-## }
+  print fmt("Terminamos copia y borrado...");
+
+}
 
 ## Cuando la conexion se establece vemos si hay flujos que emparejar y los metemos en la tabla
 ## Solo sirve para conexiones TCP, se genera cuando ve un SYN-ACK que responde al handshake de un TCP
