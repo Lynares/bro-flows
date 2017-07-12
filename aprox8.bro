@@ -82,7 +82,7 @@ event new_connection(c: connection){
   local dest = c$id$resp_h;
   local po = c$id$orig_p;
   local pd = c$id$resp_p;
-
+  print fmt("new_connection");
   if( [orig,dest,po,pd] !in collection ){
 
     ## Si no estan los valores clave del flujo lo creamos
@@ -151,7 +151,7 @@ event connection_established(c: connection){
     } else {
       ## Si no tienen el mismo uid pasamos a comprobar
       umbral=emparejamiento(cl,c);
-      print fmt("No son lo mismo TCP");
+      print fmt("connection_established");
 
       if(umbral>k){
         ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
@@ -199,7 +199,7 @@ event connection_finished(c: connection){
     } else {
       ## Si no tienen el mismo uid pasamos a comprobar
       umbral=emparejamiento(cl,c);
-
+      print fmt("connection_finished");
       if(umbral>k){
         ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
         print fmt("Si son emparejables TCP"); ## Mostramos TCP para saber en que evento se han calculado
@@ -248,7 +248,7 @@ event udp_request(u: connection){
     } else {
       ## Si no tienen el mismo uid pasamos a comprobar
       umbral=emparejamiento(ul,u);
-
+      print fmt("udp_request");
       if(umbral>k){
         ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
         print fmt("Si son emparejables UDP request"); ## Mostramos UDP para saber en que evento se han calculado
@@ -294,7 +294,7 @@ event udp_reply(u: connection){
     } else {
       ## Si no tienen el mismo uid pasamos a comprobar
       umbral=emparejamiento(ul,u);
-
+      print fmt("udp_reply");
       if(umbral>k){
         ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
         print fmt("Si son emparejables UDP reply"); ## Mostramos UDP para saber en que evento se han calculado
