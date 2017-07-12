@@ -121,6 +121,9 @@ event connection_state_remove(c: connection){
       if(tama==1){
         collection[orig,dest,po,pd]=vector();
       }
+      if(j+1==tama){
+        delete collection[orig,dest,po,pd][tama]; ## Aqui esta el error
+      }
       break;
     } else {
       collection[orig,dest,po,pd][j]=coleccion[j+1];
