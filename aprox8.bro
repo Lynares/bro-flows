@@ -100,9 +100,6 @@ event new_connection(c: connection){
 
 }
 
-## Cuando la conexion va a ser borrada la eliminamos del set y en caso de tener otra conexion en el empa la añadimos
-## se obtienen los mismos flujos añadidos que eliminados, por lo tanto hay que controlar cuando lo añadimos y cuando lo eliminamos
-## Sirve para TCP, UDP e ICMP
 ## Generated when a connection’s internal state is about to be removed from memory. Bro generates this event reliably
 ## once for every connection when it is about to delete the internal state. As such, the event is well-suited for
 ## script-level cleanup that needs to be performed for every connection.
