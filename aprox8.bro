@@ -9,7 +9,7 @@ global collection_added: table[addr, addr, port, port] of vector of connection;
 global umbral: double;
 
 ## Definimos el umbral, de manera global para hacer las comparaciones
-global k=10;
+global k=0.1;
 
 ## Creo funcion auxiliar para ver la informacion del flujos que son coincidentes
 function informacion_coincidencia(c: connection, p: connection){
@@ -83,7 +83,7 @@ event new_connection(c: connection){
   local dest = c$id$resp_h;
   local po = c$id$orig_p;
   local pd = c$id$resp_p;
-  print fmt("new_connection");
+##  print fmt("new_connection");
   if( [orig,dest,po,pd] !in collection ){
 
     ## Si no estan los valores clave del flujo lo creamos
@@ -106,29 +106,29 @@ event new_connection(c: connection){
 ## This event is generated not only for TCP sessions but also for UDP and ICMP flows.
 event connection_state_remove(c: connection){
 
-  local orig = c$id$orig_h;
-  local dest = c$id$resp_h;
-  local po = c$id$orig_p;
-  local pd = c$id$resp_p;
-  local coleccion = collection[orig,dest,po,pd];
-  local tama=|coleccion|;
+##  local orig = c$id$orig_h;
+##  local dest = c$id$resp_h;
+##  local po = c$id$orig_p;
+##  local pd = c$id$resp_p;
+##  local coleccion = collection[orig,dest,po,pd];
+##  local tama=|coleccion|;
 
 
-  for(j in coleccion){
-    if(j+1 >= tama){
-      if(tama==1){
-        collection[orig,dest,po,pd]=vector();
-      }
-      if(j+1==tama){
-        delete collection[orig,dest,po,pd][tama]; ## Aqui esta el error
-      }
-      break;
-    } else {
-      collection[orig,dest,po,pd][j]=coleccion[j+1];
-    }
-  }
+##  for(j in coleccion){
+##    if(j+1 >= tama){
+##      if(tama==1){
+##        collection[orig,dest,po,pd]=vector();
+##      }
+##      if(j+1==tama){
+##        collection[orig,dest,po,pd][tama];
+##      }
+##      break;
+##    } else {
+##      collection[orig,dest,po,pd][j]=coleccion[j+1];
+##    }
+##  }
 
-  print fmt("Terminamos copia y borrado...");
+##  print fmt("Terminamos copia y borrado...");
 
 }
 
@@ -152,7 +152,7 @@ event connection_established(c: connection){
     } else {
       ## Si no tienen el mismo uid pasamos a comprobar
       umbral=emparejamiento(cl,c);
-      print fmt("connection_established");
+##      print fmt("connection_established");
 
       if(umbral>k){
         ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
@@ -200,7 +200,7 @@ event connection_finished(c: connection){
     } else {
       ## Si no tienen el mismo uid pasamos a comprobar
       umbral=emparejamiento(cl,c);
-      print fmt("connection_finished");
+##      print fmt("connection_finished");
       if(umbral>k){
         ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
         print fmt("Si son emparejables TCP"); ## Mostramos TCP para saber en que evento se han calculado
@@ -249,7 +249,7 @@ event udp_request(u: connection){
     } else {
       ## Si no tienen el mismo uid pasamos a comprobar
       umbral=emparejamiento(ul,u);
-      print fmt("udp_request");
+##      print fmt("udp_request");
       if(umbral>k){
         ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
         print fmt("Si son emparejables UDP request"); ## Mostramos UDP para saber en que evento se han calculado
@@ -295,7 +295,7 @@ event udp_reply(u: connection){
     } else {
       ## Si no tienen el mismo uid pasamos a comprobar
       umbral=emparejamiento(ul,u);
-      print fmt("udp_reply");
+##      print fmt("udp_reply");
       if(umbral>k){
         ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
         print fmt("Si son emparejables UDP reply"); ## Mostramos UDP para saber en que evento se han calculado
@@ -440,16 +440,6 @@ event bro_init(){
 ## Evento que se genera cuando BRO va a tenerminar, menos si se realiza mediante una llamada a la funcion exit (ver documentacion)
 event bro_done(){
 
-  ##local cl: connection;
-
-  ## Mostramos lo que tenemos en la tabla de emparejados
-   ##for([o, d, s, f] in collection_added){
-     ##cl = collection_added[o,d,s,f][0];
-     ##print fmt("Tenemos: %s en %s a %s en %s", cl$id$orig_h, cl$id$orig_p, cl$id$resp_h, cl$id$resp_p);
-     ##print fmt(" de %s en %s a %s en %s", collection_added[o,d,s,f][|collection_added[o,d,s,f]|]$id$orig_h, collection_added[o,d,s,f][|collection_added[o,d,s,f]|]$id$orig_p, collection_added[o,d,s,f][|collection_added[o,d,s,f]|]$id$resp_h, collection_added[o,d,s,f][|collection_added[o,d,s,f]|]$id$resp_p);
-  ##  informacion_coincidencia(cl, collection[o,d,s,f][|collection[o,d,s,f]|]);
-  ##}
-
-  ## print fmt("Total de flujos: %d", tam);
   print fmt("Hora de finalizacion: %s", current_time());
+
 }
