@@ -11,12 +11,13 @@ global umbral: double;
 ## Definimos el umbral, de manera global para hacer las comparaciones
 global k=10;
 
-## Creo funcion auxiliar para ver la informacion del flujo que se coincide
+## Creo funcion auxiliar para ver la informacion del flujos que son coincidentes
 function informacion_coincidencia(c: connection, p: connection){
     print fmt("Informacion del primer flujo  IPo: %s , Po: %s , IPd: %s , Pd: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p);
     print fmt("Informacion del flujo coincidente  IPo: %s , Po: %s , IPd: %s , Pd: %s ", p$id$orig_h, p$id$orig_p, p$id$resp_h, p$id$resp_p);
 }
 
+## Funcion auxiliar para mostrar la informacion de un solo flujo
 function informacion_flujo(c: connection){
     print fmt("Informacion del flujo añadido IPo: %s , Po: %s , IPd: %s , Pd: %s, uid: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p, c$uid);
 }
@@ -38,7 +39,7 @@ function emparejamiento(c1: connection, c2: connection ):double {
   local k1 = 1;  ## Variable fija
   local k2 = 10; ## Variable fija
   local dt: double; ## Variable para la diferencia de los tiempos
-  local resultado = 0.0; ## Lo ponemos a 0
+  local resultado = 0.0; ## Lo inciamos a 0
   print c1$uid;
   print c2$uid;
 
