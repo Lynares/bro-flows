@@ -31,7 +31,26 @@ function emparejamiento(c1: connection, c2: connection ):double {
   local po = c1$id$orig_p;
   local pd = c1$id$resp_p;
 
-  local Nip = |collection[orig,dest,po,pd]|; ## Variable para saber cuantas conexiones tenemos
+  local orig2 = c2$id$orig_h;
+  local dest2 = c2$id$resp_h;
+  local po2 = c2$id$orig_p;
+  local pd2 = c2$id$resp_p;
+
+  local Nip: double;
+
+  if(orig==orig2) && (dest==dest2){
+    Nip=2;
+  } else if(orig==dest2) && (dest==orig2){
+    Nip=2;
+  }else if(orig==dest2) || (dest==orig2){
+    Nip=1;
+  }else if(orig==orig2) || (dest==dest2){
+    Nip=1;
+  } else {
+    Nip=0;
+  }
+
+
   local Po1: count; ## Puerto origen del primer flujo
   local Po2: count; ## Puerto origen del segundo flujo
   local Pd1: count; ## Puerto destino del primer flujo
@@ -43,7 +62,7 @@ function emparejamiento(c1: connection, c2: connection ):double {
   print c1$uid;
   print c2$uid;
 
-  print fmt("Numero de Nip en table: %d", Nip);
+  print fmt("Numero de Nip: %d", Nip);
   informacion_coincidencia(c1,c2);
   print fmt("Tiempo de inicio del flujo: %s", |c1$start_time|);
   print fmt("Tiempo de inicio del flujo: %s", |c2$start_time|);
