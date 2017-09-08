@@ -74,10 +74,11 @@ function emparejamiento(c1: connection, c2: connection ):double {
   ## la cual nos pasa el puerto, que recordamos que va tambien con un string en el cual se nos dice que tipo es, a un
   ## valor numerico que si podremos restar sin problemas
   ## La funcion quedaria asi: (Nip-1)+(1/(dp1+k1))+(1/(dp2+k1))+(1/(dt+k2))
-  Po1=port_to_count(c1$id$orig_p);
-  Pd1=port_to_count(c1$id$resp_p);
-  Po2=port_to_count(c2$id$orig_p);
-  Pd2=port_to_count(c2$id$resp_p);
+  Po1=port_to_count(po);
+  ## (c1$id$orig_p); Como ejemplo
+  Pd1=port_to_count(pd);
+  Po2=port_to_count(po2);
+  Pd2=port_to_count(pd2);
   ## local t1: double;
   ## local t2: double;
   ## t1 = time_to_double(c1$start_time);
