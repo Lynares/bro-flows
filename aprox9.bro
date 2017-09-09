@@ -19,7 +19,7 @@ function informacion_coincidencia(c: connection, p: connection){
 
 ## Funcion auxiliar para mostrar la informacion de un solo flujo
 function informacion_flujo(c: connection){
-    print fmt("Informacion del flujo añadido IPo: %s , Po: %s , IPd: %s , Pd: %s, uid: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p, c$uid);
+    print fmt("Informacion del flujo aniadido IPo: %s , Po: %s , IPd: %s , Pd: %s, uid: %s ", c$id$orig_h, c$id$orig_p, c$id$resp_h, c$id$resp_p, c$uid);
 }
 
 ## funcion para la comparacion de los flujos, c1 el flujo que esta el primero en el vector de la tabla y c2 para el flujo que es candidato a ser emparejado
@@ -59,13 +59,15 @@ function emparejamiento(c1: connection, c2: connection ):double {
   local k2 = 1000; ## Variable fija
   local dt: double; ## Variable para la diferencia de los tiempos
   local resultado = 0.0; ## Lo inciamos a 0
+
+  ## Se imprimen los dos uid's a eliminar'
   print c1$uid;
   print c2$uid;
 
-  print fmt("Numero de Nip: %s", Nip);
+  print fmt("Numero de IP coincidentes: %s", Nip);
   informacion_coincidencia(c1,c2);
-  print fmt("Tiempo de inicio del flujo: %s", |c1$start_time|);
-  print fmt("Tiempo de inicio del flujo: %s", |c2$start_time|);
+  ## print fmt("Tiempo de inicio del flujo: %s", |c1$start_time|);
+  ## print fmt("Tiempo de inicio del flujo: %s", |c2$start_time|);
   ## Para dp1 y dp2 que son 1-norm usamos la "Manhattan norm" que dice lo siguiente: SAD(x1,x2) = sumatoria(x1i - x2i)
   ## k1 y k2 son dos variables que nosotros le ponemos de forma manual, en este caso las pondremos como locales con 1 y 10 respectivamente
   ## dt es la diferencia de tiempo entre los time stamp de los primeros flujos de los flujos
@@ -88,7 +90,7 @@ function emparejamiento(c1: connection, c2: connection ):double {
 
   ## print fmt("Tiempo paquete 1: %s", t1);
   ## print fmt("Tiempo paquete 2: %s", t2);
-  print fmt("Diferencia de tiempo: %s", dt);
+  ## print fmt("Diferencia de tiempo: %s", dt);
   if(Nip==2){
     resultado=1+(1/((Po1-Po2)+k1))+(1/((Pd1-Pd2)+k1))+(1/(dt+k2));
   } else if(Nip==1){
@@ -99,6 +101,58 @@ function emparejamiento(c1: connection, c2: connection ):double {
  return resultado;
 
 }
+
+## funcion para la comparacion de los flujos, c1 el flujo que esta el primero en el vector de la tabla y c2 para el flujo que es candidato a ser emparejado
+function depuracion(c1: connection, c2: connection ):double {
+
+  local cl = c1;
+  local c = c2;
+
+  local orig = c$id$orig_h;
+  local dest = c$id$resp_h;
+  local po = c$id$orig_p;
+  local pd = c$id$resp_p;
+
+  if(cl$uid == c$uid){
+    ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
+    return 0.0;
+
+  } else {
+    ## Si no tienen el mismo uid pasamos a comprobar
+
+    umbral=emparejamiento(cl,c);
+
+    if(umbral>k){
+
+      ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
+      collection[orig,po][|collection[orig,po]|] = c;
+      informacion_coincidencia(cl, c);
+
+      if( [orig,po] !in collection_added ){
+
+        collection_added[orig,po]=vector(c);
+      ##  print fmt("Aniadimos una nueva conexion al vector de coincidencias");
+
+      } else {
+
+        ## Si ya esta, lo añadimos
+        collection_added[orig,po][|collection_added[orig,po]|] = c;
+      ##  print fmt("Ya esta en vector de coincidencias y la aniadimos");
+
+      }
+
+      return 1.0;
+
+    } else{
+
+      return 0.0;
+
+    }
+
+  }
+
+}
+
 
 ## Cada vez que entra un nuevo flujo compruebo que si esta en la tabla
 ## Este evento se lanza con cada nueva conexion de un flujo que no sea conocido, pero al borrarlo de memoria será desconocido aunque ya lo tengamos en la tabla
@@ -114,13 +168,13 @@ event new_connection(c: connection){
     ## Si no estan los valores clave del flujo lo creamos
     collection[orig,po]=vector(c);
     informacion_flujo(c);
-    print fmt("Añadimos una nueva conexion");
+    print fmt("Aniadimos una nueva conexion");
   } else {
 
     ## Si ya esta, lo añadimos
     collection[orig,po][|collection[orig,po]|] = c;
     informacion_flujo(c);
-    print fmt("Ya esta y la añadimos");
+    print fmt("Ya esta y la aniadimos");
   }
 
 }
@@ -168,76 +222,26 @@ event connection_established(c: connection){
 
   local cl = collection[orig,po][0];
 
+  local es = 0.0;
+
   if( [orig,po] in collection ){
-    ## Si existe en la coleccion
-    if(cl$uid == c$uid){
-      ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
-      next;
-
-    } else {
-      ## Si no tienen el mismo uid pasamos a comprobar
-      umbral=emparejamiento(cl,c);
-##      print fmt("connection_established");
-
-      if(umbral>k){
-        ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
-        print fmt("Si son emparejables TCP"); ## Mostramos TCP para saber en que evento se han calculado
-        collection[orig,po][|collection[orig,po]|] = c;
-        informacion_coincidencia(cl, c);
-        if( [orig,po] !in collection_added ){
-
-          collection_added[orig,po]=vector(c);
-          print fmt("Añadimos una nueva conexion al vector de coincidencias");
-        } else {
-
-          ## Si ya esta, lo añadimos
-          collection_added[orig,po][|collection_added[orig,po]|] = c;
-          print fmt("Ya esta en vector de coincidencias y la añadimos");
-        }
-
-      } else{
-        ## Si el umbral calculado es menor que el umbral de comparacion no lo añadimos
-        print fmt("No son emparejables TCP");
-
-      }
-    }
-  } if( [dest,pd] in collection ){
-    ## Si existe en la coleccion
-    if(cl$uid == c$uid){
-      ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
-      next;
-
-    } else {
-      ## Si no tienen el mismo uid pasamos a comprobar
-      umbral=emparejamiento(cl,c);
-##      print fmt("connection_established");
-
-      if(umbral>k){
-        ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
-        print fmt("Si son emparejables TCP"); ## Mostramos TCP para saber en que evento se han calculado
-        collection[orig,po][|collection[orig,po]|] = c;
-        informacion_coincidencia(cl, c);
-        if( [orig,po] !in collection_added ){
-
-          collection_added[orig,po]=vector(c);
-          print fmt("Añadimos una nueva conexion al Destino igual vector de coincidencias");
-        } else {
-
-          ## Si ya esta, lo añadimos
-          collection_added[orig,po][|collection_added[orig,po]|] = c;
-          print fmt("Ya esta en vector de coincidencias y la añadimos");
-        }
-
-      } else{
-        ## Si el umbral calculado es menor que el umbral de comparacion no lo añadimos
-        print fmt("No son emparejables TCP");
-
-      }
-    }
+    es = depuracion(cl,c);
+  } else if( [dest,pd] in collection ){
+    es = depuracion(cl,c);
+  }else if( [dest,po] in collection ){
+    es = depuracion(cl,c);
+  }else if( [orig,pd] in collection ){
+    es = depuracion(cl,c);
   }
 
-}
+  if (es==1) {
+    print fmt("Si son emparejables TCP");
+  } else {
+    print fmt("No son emparejables TCP");
+  }
 
+
+}
 
 ## Este evento se lanza cuando una conexion TCP finaliza de forma normal
 event connection_finished(c: connection){
@@ -249,135 +253,86 @@ event connection_finished(c: connection){
 
   local cl = collection[orig,po][0];
 
+  local es = 0.0;
+
   if( [orig,po] in collection ){
-    ## Si existe en la coleccion
-    if(cl$uid == c$uid){
-      ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
-      next;
-
-    } else {
-      ## Si no tienen el mismo uid pasamos a comprobar
-      umbral=emparejamiento(cl,c);
-##      print fmt("connection_finished");
-      if(umbral>k){
-        ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
-        print fmt("Si son emparejables TCP"); ## Mostramos TCP para saber en que evento se han calculado
-        collection[orig,po][|collection[orig,po]|] = c;
-        informacion_coincidencia(cl, c);
-        if( [orig,po] !in collection_added ){
-
-          collection_added[orig,po]=vector(c);
-          print fmt("Añadimos una nueva conexion al vector de coincidencias");
-        } else {
-
-          ## Si ya esta, lo añadimos
-          collection_added[orig,po][|collection_added[orig,po]|] = c;
-          print fmt("Ya esta en vector de coincidencias y la añadimos");
-        }
-
-      } else{
-        ## Si el umbral calculado es menor que el umbral de comparacion no lo añadimos
-        print fmt("No son emparejables TCP");
-
-      }
-    }
+    es = depuracion(cl,c);
+  } else if( [dest,pd] in collection ){
+    es = depuracion(cl,c);
+  }else if( [dest,po] in collection ){
+    es = depuracion(cl,c);
+  }else if( [orig,pd] in collection ){
+    es = depuracion(cl,c);
   }
 
+  if (es==1) {
+    print fmt("Si son emparejables TCP");
+  } else {
+    print fmt("No son emparejables TCP");
+  }
 }
 
 
 ## Para protocolo UDP usaremos otro evento
 ## Son funciones muy costosas por lo que se deberia de evitar su uso a menos que sea necesario
 ## udp_request se lanza por cada flujo UDP del flujo que es enviado por el origen.
-event udp_request(u: connection){
+event udp_request(c: connection){
 
-  local orig = u$id$orig_h;
-  local dest = u$id$resp_h;
-  local po = u$id$orig_p;
-  local pd = u$id$resp_p;
+  local orig = c$id$orig_h;
+  local dest = c$id$resp_h;
+  local po = c$id$orig_p;
+  local pd = c$id$resp_p;
 
-  local ul = collection[orig,po][0];
+  local cl = collection[orig,po][0];
+
+  local es = 0.0;
 
   if( [orig,po] in collection ){
-    ## Si existe en la coleccion
-    if(ul$uid == u$uid){
-      ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
-      next;
+    es = depuracion(cl,c);
+  } else if( [dest,pd] in collection ){
+    es = depuracion(cl,c);
+  }else if( [dest,po] in collection ){
+    es = depuracion(cl,c);
+  }else if( [orig,pd] in collection ){
+    es = depuracion(cl,c);
+  }
 
-    } else {
-      ## Si no tienen el mismo uid pasamos a comprobar
-      umbral=emparejamiento(ul,u);
-##      print fmt("udp_request");
-      if(umbral>k){
-        ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
-        print fmt("Si son emparejables UDP request"); ## Mostramos UDP para saber en que evento se han calculado
-        collection[orig,po][|collection[orig,po]|] = u;
-        informacion_coincidencia(ul, u);
-        if( [orig,po] !in collection_added ){
-
-          collection_added[orig,po]=vector(u);
-          print fmt("Añadimos una nueva conexion al vector de coincidencias");
-        } else {
-
-          ## Si ya esta, lo añadimos
-          collection_added[orig,po][|collection_added[orig,po]|] = u;
-          print fmt("Ya esta en vector de coincidencias y la añadimos");
-        }
-      } else{
-        ## Si el umbral calculado es menor que el umbral de comparacion no lo añadimos
-        print fmt("No son emparejables UDP request");
-
-      }
-    }
+  if (es==1) {
+    print fmt("Si son emparejables UDP request");
+  } else {
+    print fmt("No son emparejables UDP request");
   }
 
 }
 
 ## udp_reply se lanza por cada flujo UDP del flujo que es devuelto por el destinatario del primer envio.
 ## cabecera del evento event udp_reply(u: connection)
-event udp_reply(u: connection){
+event udp_reply(c: connection){
 
-  local orig = u$id$orig_h;
-  local dest = u$id$resp_h;
-  local po = u$id$orig_p;
-  local pd = u$id$resp_p;
+  local orig = c$id$orig_h;
+  local dest = c$id$resp_h;
+  local po = c$id$orig_p;
+  local pd = c$id$resp_p;
 
-  local ul = collection[orig,po][0];
+  local cl = collection[orig,po][0];
+
+  local es = 0.0;
 
   if( [orig,po] in collection ){
-    ## Si existe en la coleccion
-    if(ul$uid == u$uid){
-      ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
-      next;
-
-    } else {
-      ## Si no tienen el mismo uid pasamos a comprobar
-      umbral=emparejamiento(ul,u);
-##      print fmt("udp_reply");
-      if(umbral>k){
-        ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
-        print fmt("Si son emparejables UDP reply"); ## Mostramos UDP para saber en que evento se han calculado
-        collection[orig,po][|collection[orig,po]|] = u;
-        informacion_coincidencia(ul, u);
-        if( [orig,po] !in collection_added ){
-
-          collection_added[orig,po]=vector(u);
-          print fmt("Añadimos una nueva conexion al vector de coincidencias");
-        } else {
-
-          ## Si ya esta, lo añadimos
-          collection_added[orig,po][|collection_added[orig,po]|] = u;
-          print fmt("Ya esta en vector de coincidencias y la añadimos");
-        }
-
-      } else{
-        ## Si el umbral calculado es menor que el umbral de comparacion no lo añadimos
-        print fmt("No son emparejables UDP reply");
-
-      }
-    }
+    es = depuracion(cl,c);
+  } else if( [dest,pd] in collection ){
+    es = depuracion(cl,c);
+  }else if( [dest,po] in collection ){
+    es = depuracion(cl,c);
+  }else if( [orig,pd] in collection ){
+    es = depuracion(cl,c);
   }
 
+  if (es==1) {
+    print fmt("Si son emparejables UDP reply");
+  } else {
+    print fmt("No son emparejables UDP reply");
+  }
 }
 
 ## udp_session_done se lanza cuando la conexion UDP finaliza, por lo tanto tendremos que borrar del set conex los flujos que se correspondan
@@ -408,40 +363,23 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
 
   local cl = collection[orig,po][0];
 
+  local es = 0.0;
+
   if( [orig,po] in collection ){
-    ## Si existe en la coleccion
-    if(cl$uid == c$uid){
-      ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
-      next;
-
-    } else {
-      ## Si no tienen el mismo uid pasamos a comprobar
-      umbral=emparejamiento(cl,c);
-
-      if(umbral>k){
-        ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
-        print fmt("Si son emparejables ICMP request"); ## Mostramos ICMP para saber en que evento se han calculado
-        collection[orig,po][|collection[orig,po]|] = c;
-        informacion_coincidencia(cl, c);
-        if( [orig,po] !in collection_added ){
-
-          collection_added[orig,po]=vector(c);
-          print fmt("Añadimos una nueva conexion al vector de coincidencias");
-        } else {
-
-          ## Si ya esta, lo añadimos
-          collection_added[orig,po][|collection_added[orig,po]|] = c;
-          print fmt("Ya esta en vector de coincidencias y la añadimos");
-        }
-
-      } else{
-        ## Si el umbral calculado es menor que el umbral de comparacion no lo añadimos
-        print fmt("No son emparejables ICMP request");
-
-      }
-    }
+    es = depuracion(cl,c);
+  } else if( [dest,pd] in collection ){
+    es = depuracion(cl,c);
+  }else if( [dest,po] in collection ){
+    es = depuracion(cl,c);
+  }else if( [orig,pd] in collection ){
+    es = depuracion(cl,c);
   }
 
+  if (es==1) {
+    print fmt("Si son emparejables ICMP request");
+  } else {
+    print fmt("No son emparejables ICMP request");
+  }
 }
 
 event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, payload: string){
@@ -452,40 +390,23 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
 
   local cl = collection[orig,po][0];
 
+  local es = 0.0;
+
   if( [orig,po] in collection ){
-    ## Si existe en la coleccion
-    if(cl$uid == c$uid){
-      ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
-      next;
-
-    } else {
-      ## Si no tienen el mismo uid pasamos a comprobar
-      umbral=emparejamiento(cl,c);
-
-      if(umbral>k){
-        ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
-        print fmt("Si son emparejables ICMP reply"); ## Mostramos ICMP para saber en que evento se han calculado
-        collection[orig,po][|collection[orig,po]|] = c;
-        informacion_coincidencia(cl, c);
-        if( [orig,po] !in collection_added ){
-
-          collection_added[orig,po]=vector(c);
-          print fmt("Añadimos una nueva conexion al vector de coincidencias");
-        } else {
-
-          ## Si ya esta, lo añadimos
-          collection_added[orig,po][|collection_added[orig,po]|] = c;
-          print fmt("Ya esta en vector de coincidencias y la añadimos");
-        }
-
-      } else{
-        ## Si el umbral calculado es menor que el umbral de comparacion no lo añadimos
-        print fmt("No son emparejables ICMP reply");
-
-      }
-    }
+    es = depuracion(cl,c);
+  } else if( [dest,pd] in collection ){
+    es = depuracion(cl,c);
+  }else if( [dest,po] in collection ){
+    es = depuracion(cl,c);
+  }else if( [orig,pd] in collection ){
+    es = depuracion(cl,c);
   }
 
+  if (es==1) {
+    print fmt("Si son emparejables ICMP reply");
+  } else {
+    print fmt("No son emparejables ICMP reply");
+  }
 }
 
 ## Evento que se lanza cuando se inicia BRO.
