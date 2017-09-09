@@ -14,11 +14,13 @@ export{
     po1: port &log;
     dest1: addr &log;
     pd1: port &log;
+    uid1: string &log;
     informacion: string &log;
     orig2: addr &log;
     po2: port &log;
     dest2: addr &log;
     pd2: port &log;
+    uid2: string &log;
   };
   global log_flow: event(rec: Info);
 
@@ -67,11 +69,13 @@ function emparejamiento(c1: connection, c2: connection ):double {
   local dest = c1$id$resp_h;
   local po = c1$id$orig_p;
   local pd = c1$id$resp_p;
+  local uid1 = c1$uid;
 
   local orig2 = c2$id$orig_h;
   local dest2 = c2$id$resp_h;
   local po2 = c2$id$orig_p;
   local pd2 = c2$id$resp_p;
+  local uid2 = c2$uid;
 
   local Nip: double;
 
@@ -149,6 +153,7 @@ function calculo(c1: connection, c2: connection ):double {
   local dest = c$id$resp_h;
   local po = c$id$orig_p;
   local pd = c$id$resp_p;
+  local uid = c$uid;
 
   local informacion = " emparejado con ";
 
@@ -156,6 +161,7 @@ function calculo(c1: connection, c2: connection ):double {
   local destl = cl$id$resp_h;
   local pol = cl$id$orig_p;
   local pdl = cl$id$resp_p;
+  local uidl = cl$uid;
 
   if(cl$uid == c$uid){
     ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
@@ -185,9 +191,9 @@ function calculo(c1: connection, c2: connection ):double {
 
       }
 
-      local rec: BROFLOWS::Info = [$orig1=origl, $po1=pol, $dest1=destl, $pd1=pdl, $informacion=informacion, $orig2=orig, $po2=po, $dest2=dest, $pd2=pd];
+      local rec: BROFLOWS::Info = [$orig1=origl, $po1=pol, $dest1=destl, $pd1=pdl, $uid1=uidl, $informacion=informacion, $orig2=orig, $po2=po, $dest2=dest, $pd2=pd, $uid2=uid];
       Log::write(BROFLOWS::LOG, rec);
-      
+
       return 1.0;
 
     } else{
@@ -233,8 +239,23 @@ event connection_state_remove(c: connection){
   local orig = c$id$orig_h;
   local po = c$id$orig_p;
 
+  local copia = collection[orig,po];
+  local tam = |copia|;
+  local primero = collection[orig,po][0];
   if([orig,po] in collection){
         collection[orig,po]=vector();
+  }
+
+  for(i in copia){
+    if(tam==1){
+      break;
+    }else{
+      if(tam>i){
+        collection[orig,po][|collection[orig,po]|]=copia[i+1];
+      }else{
+        next;
+      }
+    }
   }
 
   print fmt("Terminamos copia y borrado...");
