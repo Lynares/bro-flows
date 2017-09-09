@@ -1,5 +1,5 @@
 #Autor: Álvaro Maximino Linares Herrera
-#Descripción: Script de Bro para la identificación de tráfico mediante emparejamiento de flujos
+#Descripción: Script de Bro para la identificación de tráfico mediante emparejamiento de flujos, Depuracion.
 
 module BROFLOWS;
 
@@ -26,21 +26,12 @@ export{
 
 }
 
-## Evento que se lanza cuando se inicia BRO.
+## Evento que se lanza cuando se inicia Bro, para crear registro
 event bro_init(){
 
   Log::create_stream(BROFLOWS::LOG, [$columns=Info, $ev=log_flow]);
 
 }
-
-## Evento que se genera cuando BRO va a tenerminar, menos si se realiza mediante una llamada a la funcion exit (ver documentacion)
-event bro_done(){
-
-  print fmt("Hora de finalizacion: %s", current_time());
-
-}
-
-
 
 ## El umbral: "Comparar la constante 'k', que es el umbral que fijaré con el resultado que devuelve la función,
 ## si es más grande el resultado que 'k' se puede decir que los dos flujos son iguales, si es más pequeño podemos decir que los dos flujos no son iguales"
@@ -218,14 +209,14 @@ event new_connection(c: connection){
 
     ## Si no estan los valores clave del flujo lo creamos
     collection[orig,po]=vector(c);
-    informacion_flujo(c);
-    print fmt("Aniadimos una nueva conexion");
+##    informacion_flujo(c);
+
   } else {
 
     ## Si ya esta, lo añadimos
     collection[orig,po][|collection[orig,po]|] = c;
-    informacion_flujo(c);
-    print fmt("Ya esta y la aniadimos");
+##    informacion_flujo(c);
+
   }
 
 }
@@ -258,7 +249,7 @@ event connection_state_remove(c: connection){
     }
   }
 
-  print fmt("Terminamos copia y borrado...");
+##  print fmt("Terminamos copia y borrado...");
 
 }
 
