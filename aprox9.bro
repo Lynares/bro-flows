@@ -1,7 +1,44 @@
+#Autor: Álvaro Maximino Linares Herrera
+#Descripción: Script de Bro para la identificación de tráfico mediante emparejamiento de flujos
 
-## Tabla para guardar los flujos que son emparejados
+module BROFLOWS;
+
+## Tablas para guardar los flujos
 global collection: table[addr, port] of vector of connection &synchronized;
 global collection_added: table[addr, port] of vector of connection;
+
+export{
+  redef enum Log::ID += { LOG };
+  type Info: record {
+    orig1: addr &log;
+    po1: port &log;
+    dest1: addr &log;
+    pd1: port &log;
+    informacion: string &log;
+    orig2: addr &log;
+    po2: port &log;
+    dest2: addr &log;
+    pd2: port &log;
+  };
+  global log_flow: event(rec: Info);
+
+}
+
+## Evento que se lanza cuando se inicia BRO.
+event bro_init(){
+
+  Log::create_stream(BROFLOWS::LOG, [$columns=Info, $ev=log_flow]);
+
+}
+
+## Evento que se genera cuando BRO va a tenerminar, menos si se realiza mediante una llamada a la funcion exit (ver documentacion)
+event bro_done(){
+
+  print fmt("Hora de finalizacion: %s", current_time());
+
+}
+
+
 
 ## El umbral: "Comparar la constante 'k', que es el umbral que fijaré con el resultado que devuelve la función,
 ## si es más grande el resultado que 'k' se puede decir que los dos flujos son iguales, si es más pequeño podemos decir que los dos flujos no son iguales"
@@ -9,7 +46,7 @@ global collection_added: table[addr, port] of vector of connection;
 global umbral: double;
 
 ## Definimos el umbral, de manera global para hacer las comparaciones
-global k=0.1;
+global k=0.01;
 
 ## Creo funcion auxiliar para ver la informacion del flujos que son coincidentes
 function informacion_coincidencia(c: connection, p: connection){
@@ -113,6 +150,13 @@ function calculo(c1: connection, c2: connection ):double {
   local po = c$id$orig_p;
   local pd = c$id$resp_p;
 
+  local informacion = " emparejado con ";
+
+  local origl = cl$id$orig_h;
+  local destl = cl$id$resp_h;
+  local pol = cl$id$orig_p;
+  local pdl = cl$id$resp_p;
+
   if(cl$uid == c$uid){
     ## Si tienen el mismo uid pasamos del flujo, pues son el mismo
     return 0.0;
@@ -141,6 +185,9 @@ function calculo(c1: connection, c2: connection ):double {
 
       }
 
+      local rec: BROFLOWS::Info = [$orig1=origl, $po1=pol, $dest1=destl, $pd1=pdl, $informacion=informacion, $orig2=orig, $po2=po, $dest2=dest, $pd2=pd];
+      Log::write(BROFLOWS::LOG, rec);
+      
       return 1.0;
 
     } else{
@@ -493,19 +540,5 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
       print fmt("No son emparejables ICMP reply4");
     }
   }
-
-}
-
-## Evento que se lanza cuando se inicia BRO.
-event bro_init(){
-
-  print fmt("Hora de inicio: %s", current_time());
-
-}
-
-## Evento que se genera cuando BRO va a tenerminar, menos si se realiza mediante una llamada a la funcion exit (ver documentacion)
-event bro_done(){
-
-  print fmt("Hora de finalizacion: %s", current_time());
 
 }
