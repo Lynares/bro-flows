@@ -103,7 +103,7 @@ function emparejamiento(c1: connection, c2: connection ):double {
 }
 
 ## funcion para la comparacion de los flujos, c1 el flujo que esta el primero en el vector de la tabla y c2 para el flujo que es candidato a ser emparejado
-function depuracion(c1: connection, c2: connection ):double {
+function calculo(c1: connection, c2: connection ):double {
 
   local cl = c1;
   local c = c2;
@@ -159,10 +159,8 @@ function depuracion(c1: connection, c2: connection ):double {
 ## Generated for every new connection. This event is raised with the first packet of a previously unknown connection. Bro uses a flow-based definition of “connection” here that includes not only TCP sessions but also UDP and ICMP flows.
 event new_connection(c: connection){
   local orig = c$id$orig_h;
-  local dest = c$id$resp_h;
   local po = c$id$orig_p;
-  local pd = c$id$resp_p;
-##  print fmt("new_connection");
+
   if( [orig,po] !in collection ){
 
     ## Si no estan los valores clave del flujo lo creamos
@@ -185,29 +183,14 @@ event new_connection(c: connection){
 ## This event is generated not only for TCP sessions but also for UDP and ICMP flows.
 event connection_state_remove(c: connection){
 
-##  local orig = c$id$orig_h;
-##  local dest = c$id$resp_h;
-##  local po = c$id$orig_p;
-##  local pd = c$id$resp_p;
-##  local coleccion = collection[orig,po];
-##  local tama=|coleccion|;
+  local orig = c$id$orig_h;
+  local po = c$id$orig_p;
 
+  if([orig,po] in collection){
+        collection[orig,po]=vector();
+  }
 
-##  for(j in coleccion){
-##    if(j+1 >= tama){
-##      if(tama==1){
-##        collection[orig,po]=vector();
-##      }
-##      if(j+1==tama){
-##        collection[orig,po][tama];
-##      }
-##      break;
-##    } else {
-##      collection[orig,po][j]=coleccion[j+1];
-##    }
-##  }
-
-##  print fmt("Terminamos copia y borrado...");
+  print fmt("Terminamos copia y borrado...");
 
 }
 
@@ -225,21 +208,37 @@ event connection_established(c: connection){
   local es = 0.0;
 
   if( [orig,po] in collection ){
-    es = depuracion(cl,c);
-  } else if( [dest,pd] in collection ){
-    es = depuracion(cl,c);
-  }else if( [dest,po] in collection ){
-    es = depuracion(cl,c);
-  }else if( [orig,pd] in collection ){
-    es = depuracion(cl,c);
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables TCP");
+    } else {
+      print fmt("No son emparejables TCP");
+    }
   }
-
-  if (es==1) {
-    print fmt("Si son emparejables TCP");
-  } else {
-    print fmt("No son emparejables TCP");
+  if( [dest,pd] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables TCP2");
+    } else {
+      print fmt("No son emparejables TCP2");
+    }
   }
-
+  if( [dest,po] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables TCP3");
+    } else {
+      print fmt("No son emparejables TCP3");
+    }
+  }
+  if( [orig,pd] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables TCP4");
+    } else {
+      print fmt("No son emparejables TCP4");
+    }
+  }
 
 }
 
@@ -256,20 +255,38 @@ event connection_finished(c: connection){
   local es = 0.0;
 
   if( [orig,po] in collection ){
-    es = depuracion(cl,c);
-  } else if( [dest,pd] in collection ){
-    es = depuracion(cl,c);
-  }else if( [dest,po] in collection ){
-    es = depuracion(cl,c);
-  }else if( [orig,pd] in collection ){
-    es = depuracion(cl,c);
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables TCP");
+    } else {
+      print fmt("No son emparejables TCP");
+    }
+  }
+  if( [dest,pd] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables TCP2");
+    } else {
+      print fmt("No son emparejables TCP2");
+    }
+  }
+  if( [dest,po] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables TCP3");
+    } else {
+      print fmt("No son emparejables TCP3");
+    }
+  }
+  if( [orig,pd] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables TCP4");
+    } else {
+      print fmt("No son emparejables TCP4");
+    }
   }
 
-  if (es==1) {
-    print fmt("Si son emparejables TCP");
-  } else {
-    print fmt("No son emparejables TCP");
-  }
 }
 
 
@@ -288,19 +305,36 @@ event udp_request(c: connection){
   local es = 0.0;
 
   if( [orig,po] in collection ){
-    es = depuracion(cl,c);
-  } else if( [dest,pd] in collection ){
-    es = depuracion(cl,c);
-  }else if( [dest,po] in collection ){
-    es = depuracion(cl,c);
-  }else if( [orig,pd] in collection ){
-    es = depuracion(cl,c);
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables UDP request");
+    } else {
+      print fmt("No son emparejables UDP request");
+    }
   }
-
-  if (es==1) {
-    print fmt("Si son emparejables UDP request");
-  } else {
-    print fmt("No son emparejables UDP request");
+  if( [dest,pd] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables UDP request2");
+    } else {
+      print fmt("No son emparejables UDP request2");
+    }
+  }
+  if( [dest,po] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables UDP request3");
+    } else {
+      print fmt("No son emparejables UDP request3");
+    }
+  }
+  if( [orig,pd] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables UDP request4");
+    } else {
+      print fmt("No son emparejables UDP request4");
+    }
   }
 
 }
@@ -319,20 +353,38 @@ event udp_reply(c: connection){
   local es = 0.0;
 
   if( [orig,po] in collection ){
-    es = depuracion(cl,c);
-  } else if( [dest,pd] in collection ){
-    es = depuracion(cl,c);
-  }else if( [dest,po] in collection ){
-    es = depuracion(cl,c);
-  }else if( [orig,pd] in collection ){
-    es = depuracion(cl,c);
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables UDP reply");
+    } else {
+      print fmt("No son emparejables UDP reply");
+    }
+  }
+  if( [dest,pd] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables UDP reply2");
+    } else {
+      print fmt("No son emparejables UDP reply2");
+    }
+  }
+  if( [dest,po] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables UDP reply3");
+    } else {
+      print fmt("No son emparejables UDP reply3");
+    }
+  }
+  if( [orig,pd] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables UDP reply4");
+    } else {
+      print fmt("No son emparejables UDP reply4");
+    }
   }
 
-  if (es==1) {
-    print fmt("Si son emparejables UDP reply");
-  } else {
-    print fmt("No son emparejables UDP reply");
-  }
 }
 
 ## udp_session_done se lanza cuando la conexion UDP finaliza, por lo tanto tendremos que borrar del set conex los flujos que se correspondan
@@ -366,19 +418,36 @@ event icmp_echo_request(c: connection, icmp: icmp_conn, id: count, seq: count, p
   local es = 0.0;
 
   if( [orig,po] in collection ){
-    es = depuracion(cl,c);
-  } else if( [dest,pd] in collection ){
-    es = depuracion(cl,c);
-  }else if( [dest,po] in collection ){
-    es = depuracion(cl,c);
-  }else if( [orig,pd] in collection ){
-    es = depuracion(cl,c);
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables ICMP request");
+    } else {
+      print fmt("No son emparejables ICMP request");
+    }
   }
-
-  if (es==1) {
-    print fmt("Si son emparejables ICMP request");
-  } else {
-    print fmt("No son emparejables ICMP request");
+  if( [dest,pd] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables ICMP request2");
+    } else {
+      print fmt("No son emparejables ICMP request2");
+    }
+  }
+  if( [dest,po] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables ICMP request3");
+    } else {
+      print fmt("No son emparejables ICMP request3");
+    }
+  }
+  if( [orig,pd] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables ICMP request4");
+    } else {
+      print fmt("No son emparejables ICMP request4");
+    }
   }
 }
 
@@ -393,20 +462,38 @@ event icmp_echo_reply(c: connection, icmp: icmp_conn, id: count, seq: count, pay
   local es = 0.0;
 
   if( [orig,po] in collection ){
-    es = depuracion(cl,c);
-  } else if( [dest,pd] in collection ){
-    es = depuracion(cl,c);
-  }else if( [dest,po] in collection ){
-    es = depuracion(cl,c);
-  }else if( [orig,pd] in collection ){
-    es = depuracion(cl,c);
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables ICMP reply");
+    } else {
+      print fmt("No son emparejables ICMP reply");
+    }
+  }
+  if( [dest,pd] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables ICMP reply2");
+    } else {
+      print fmt("No son emparejables ICMP reply2");
+    }
+  }
+  if( [dest,po] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables ICMP reply3");
+    } else {
+      print fmt("No son emparejables ICMP reply3");
+    }
+  }
+  if( [orig,pd] in collection ){
+    es = calculo(cl,c);
+    if (es==1) {
+      print fmt("Si son emparejables ICMP reply4");
+    } else {
+      print fmt("No son emparejables ICMP reply4");
+    }
   }
 
-  if (es==1) {
-    print fmt("Si son emparejables ICMP reply");
-  } else {
-    print fmt("No son emparejables ICMP reply");
-  }
 }
 
 ## Evento que se lanza cuando se inicia BRO.
