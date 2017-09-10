@@ -40,7 +40,7 @@ global k: double;
 global umbral=1;
 
 ## Variables para el calculo de la ecuacion
-global k1 = 3;
+global k1 = 1;
 global k2 = 100;
 
 ## Creo funcion auxiliar para ver la informacion del flujos que son coincidentes
