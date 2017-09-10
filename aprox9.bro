@@ -4,7 +4,7 @@
 module BROFLOWS;
 
 ## Tablas para guardar los flujos
-global collection: table[addr, port] of vector of connection &synchronized;
+global collection: table[addr, port] of vector of connection;
 global collection_added: table[addr, port] of vector of connection;
 
 export{

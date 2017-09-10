@@ -4,7 +4,7 @@
 module BROFLOWS;
 
 ## Tablas para guardar los flujos
-global activos: table[addr, port] of vector of connection &synchronized;
+global activos: table[addr, port] of vector of connection;
 global emparejados: table[addr, port] of vector of connection;
 
 export{
@@ -33,13 +33,15 @@ event bro_init(){
 
 }
 
-## El umbral: "Comparar la constante 'k', que es el umbral que fijaré con el resultado que devuelve la función,
-## si es más grande el resultado que 'k' se puede decir que los dos flujos son iguales, si es más pequeño podemos decir que los dos flujos no son iguales"
-## resultado del umbral que calculamos
-global umbral: double;
+## Variable en la que se guarda el resultado de aplicar la ecuacion
+global k: double;
 
 ## Definimos el umbral, de manera global para hacer las comparaciones
-global k=0.01;
+global umbral=1;
+
+## Variables para el calculo de la ecuacion
+global k1 = 3;
+global k2 = 100;
 
 ## Creo funcion auxiliar para ver la informacion del flujos que son coincidentes
 function informacion_coincidencia(c: connection, p: connection){
@@ -79,8 +81,6 @@ function emparejamiento(c1: connection, c2: connection ):double {
   local Po2: count; ## Puerto origen del segundo flujo
   local Pd1: count; ## Puerto destino del primer flujo
   local Pd2: count; ## Puerto destino del segundo flujo
-  local k1 = 1;     ## Variable fija
-  local k2 = 100;   ## Variable fija
   local dt: double; ## Variable para la diferencia de los tiempos
   local resultado = 0.0; ## Lo inciamos a 0
 
@@ -144,9 +144,9 @@ function calculo(c1: connection, c2: connection ){
   } else {
     ## Si no tienen el mismo uid pasamos a comprobar
 
-    umbral=emparejamiento(cl,c);
+    k=emparejamiento(cl,c);
 
-    if(umbral>k){
+    if(k>umbral){
 
       ## Si el umbral calculado es mayor que el umbral de comparacion lo añadimos
       activos[orig,po][|activos[orig,po]|] = c;
@@ -206,8 +206,8 @@ event connection_state_remove(c: connection){
     if(tam==1){
       break;
     }else{
-      if(tam>i){
-        activos[orig,po][|activos[orig,po]|]=copia[i+1];
+      if(primero$uid!=copia[i]$uid){
+        activos[orig,po][|activos[orig,po]|]=copia[i];
       }else{
         next;
       }
